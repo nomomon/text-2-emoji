@@ -5,6 +5,11 @@ name = "pypi"
 
 [packages]
 pre-commit = "*"
+pandas = "*"
+numpy = "*"
+matplotlib = "*"
+seaborn = "*"
+ipykernel = "*"
 
 [dev-packages]
 
