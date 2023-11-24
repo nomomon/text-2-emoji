@@ -18,6 +18,7 @@ ipykernel = "*"
 transformers = "*"
 scikit-learn = "*"
 torch = {version = "*", index = "downloadpytorch"}
+tqdm = "*"
 
 [dev-packages]
 
