@@ -1,6 +1,0 @@
-nltk
-matplotlib
-numpy
-pandas
-gensim
-tqdm
