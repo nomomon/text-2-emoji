@@ -3,10 +3,6 @@ import re
 import nltk
 from nltk.corpus import stopwords
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-
 def clean_text(text):
     """
         Clean text by removing unnecessary characters (non-aphabetic) and multiplying spaces

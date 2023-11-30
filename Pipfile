@@ -4,6 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+nltk = "*"
+matplotlib = "*"
+numpy = "*"
+pandas = "*"
+gensim = "*"
+tqdm = "*"
 
 [dev-packages]
 
