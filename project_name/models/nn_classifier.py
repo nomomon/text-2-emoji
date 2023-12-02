@@ -1,11 +1,8 @@
 import torch
 from tqdm import tqdm
 
-# Check if GPU is available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-def create_model(n_inputs, n_layers, n_neurons, n_outputs=20):
+def get_model(n_inputs, n_layers, n_neurons, n_outputs=20):
     """
     Create a neural network model
 
@@ -41,7 +38,7 @@ def create_model(n_inputs, n_layers, n_neurons, n_outputs=20):
     return model
 
 
-def create_optimizer(model, optimizer_type, learning_rate):
+def get_optimizer(model, optimizer_type, learning_rate):
     """
     Create an optimizer for a model
 
@@ -83,14 +80,17 @@ def train_model(model, optimizer, epochs, train_data, val_data):
     # Separate features and labels
     train_features = train_data.drop(columns=["label"]).to_numpy()
     train_labels = train_data["label"].to_numpy()
-    val_features = val_data.drop(columns=["label"]).to_numpy()
-    val_labels = val_data["label"].to_numpy()
+    valid_features = val_data.drop(columns=["label"]).to_numpy()
+    valid_labels = val_data["label"].to_numpy()
+
+    # Check if GPU is available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Convert to tensors on GPU
     train_features = torch.tensor(train_features).float().to(device)
     train_labels = torch.tensor(train_labels).to(device)
-    val_features = torch.tensor(val_features).float().to(device)
-    val_labels = torch.tensor(val_labels).to(device)
+    valid_features = torch.tensor(valid_features).float().to(device)
+    valid_labels = torch.tensor(valid_labels).to(device)
 
     model.to(device)
 
@@ -107,8 +107,8 @@ def train_model(model, optimizer, epochs, train_data, val_data):
         optimizer.step()
 
     # Evaluate model
-    val_predictions = model(val_features)
-    correct_predictions = val_predictions.argmax(dim=1) == val_labels
-    val_accuracy = correct_predictions.float().mean().item()
+    valid_predictions = model(valid_features)
+    correct_predictions = valid_predictions.argmax(dim=1) == valid_labels
+    valid_accuracy = correct_predictions.float().mean().item()
 
-    return val_accuracy
+    return valid_accuracy

@@ -29,7 +29,7 @@ def balance_dataframe(df):
     return balanced_dataframe
 
 
-def reduce_dimensions(df, n_dimensions):
+def reduce_dimensions_pca(df, n_dimensions):
     """
     Reduce the number of dimensions of a dataframe using PCA (for now at least)
 
