@@ -3,6 +3,7 @@ import gensim.downloader as w2v_api
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import normalize
 
 
 def invalid_text_vec(v_size):
@@ -26,7 +27,7 @@ def make_sentence_embeddings():
             # TODO: later extract this into a function to use for preprocessing (mansur)
             try:
                 sentence = nltk.word_tokenize(row.text)
-            except TypeError:  
+            except TypeError:
                 # (e.g. empty sentence)
                 n_invalid_texts += 1
                 features.append(invalid_text_vec(v_size))
@@ -36,7 +37,7 @@ def make_sentence_embeddings():
             for word in sentence:
                 try:
                     word_vectors.append(w2v_model[word])
-                except KeyError:  
+                except KeyError:
                     # ignore (e.g. unknown word)
                     continue
 
@@ -51,9 +52,12 @@ def make_sentence_embeddings():
         features = np.array(features)
         target = df.label.values
 
+        # Normalize the features to unit length
+        features = normalize(features)
+
         assert features.shape == (len(df), v_size)
         assert len(features) == len(target)
-        
+
         np.save(f'./data/gold/{name}_{encoder_type}_features.npy', features)
         np.save(f'./data/gold/{name}_{encoder_type}_target.npy', target)
 
@@ -62,6 +66,7 @@ def make_sentence_embeddings():
     #       replace with an assert here instead (mansur)
     print(f"Number of invalid texts: {n_invalid_texts}")
     print(f"Number of texts with only unknown words: {n_only_unknown_words}")
+
 
 if __name__ == '__main__':
     make_sentence_embeddings()

@@ -1,4 +1,4 @@
-from project_name.data.text_processing import *
+from text2emoji.data.text_processing import *
 from create_embedding import *
 import pandas as pd
 from tqdm import tqdm
@@ -31,13 +31,13 @@ def make_df_from_raw(name="train", path="data/raw/"):
     return df
 
 
-if __name__ == '__main__':
+def clean_text():
     print('Installing nltk...')
     nltk.download('punkt')
     nltk.download('stopwords')
     nltk.download('wordnet')
     nltk.download('omw-1.4')
-    
+
     print('Making directories...')
     os.makedirs('../data/bronze', exist_ok=True)
     os.makedirs('../data/silver', exist_ok=True)
@@ -60,6 +60,11 @@ if __name__ == '__main__':
     train.to_csv('./data/silver/train.csv', index=False)
     valid.to_csv('./data/silver/valid.csv', index=False)
     test.to_csv('./data/silver/test.csv', index=False)
+
+
+if __name__ == '__main__':
+
+    clean_text()
 
     make_sentence_embeddings()
 
