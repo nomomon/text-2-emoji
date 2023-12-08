@@ -92,6 +92,7 @@ class GridSearchModel():
             self.add_result(hyperparameter_combination, accuracy)
 
         # Save results to csv
+        self.results.sort_values("accuracy", ascending=False, inplace=True)
         self.results.to_csv("out/grid_search_results.csv", index=False)
 
     def get_best_hyperparameters(self):
