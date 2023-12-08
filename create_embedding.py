@@ -1,11 +1,11 @@
 import nltk
-from gensim.models import Word2Vec
+import gensim.downloader as w2v_api
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
 
 
-def invalid_sentence_vec(v_size):
+def invalid_text_vec(v_size):
     return np.zeros(v_size, dtype=np.float32)
 
 
@@ -14,50 +14,51 @@ def make_sentence_embeddings():
     valid = pd.read_csv('./data/silver/valid.csv')
     test = pd.read_csv('./data/silver/test.csv')
 
-    corpus = []
-    for df, name in [(train, "train"), (valid, "valid")]:
-        for row in tqdm(df.itertuples(), total=len(df), desc=name):
-            corpus.append(nltk.word_tokenize(row.text))
+    encoder_type = "word2vec"
+    w2v_model = w2v_api.load("word2vec-google-news-300")
+    v_size = w2v_model.vector_size
 
-    v_size = 100  # 100 is default
-    w2v_model = Word2Vec(corpus, min_count=1, vector_size=v_size)
-
-    print("Model created, creating embeddings...")
-
-    empty_rows = 0
-    only_unknown_words = 0
+    n_invalid_texts = 0
+    n_only_unknown_words = 0
     for df, name in [(train, "train"), (valid, "valid"), (test, "test")]:
+        features = []
         for row in tqdm(df.itertuples(), total=len(df), desc=name):
+            # TODO: later extract this into a function to use for preprocessing (mansur)
             try:
                 sentence = nltk.word_tokenize(row.text)
-            except TypeError:  # Empty sentence for example
-                empty_rows += 1
-                df.at[row.Index, 'text'] = invalid_sentence_vec(v_size)
+            except TypeError:  
+                # (e.g. empty sentence)
+                n_invalid_texts += 1
+                df.at[row.Index, 'text'] = invalid_text_vec(v_size)
                 continue
 
             word_vectors = []
             for word in sentence:
                 try:
-                    word_vectors.append(w2v_model.wv[word])
-                except KeyError:  # Word not trained on, ignore
+                    word_vectors.append(w2v_model[word])
+                except KeyError:  
+                    # ignore (e.g. unknown word)
                     continue
 
             if len(word_vectors) == 0:
-                only_unknown_words += 1
-                df.at[row.Index, 'text'] = invalid_sentence_vec(v_size)
+                n_only_unknown_words += 1
+                df.at[row.Index, 'text'] = invalid_text_vec(v_size)
                 continue
 
             word_vectors = np.array(word_vectors)
             mean_vector = word_vectors.mean(axis=0)
-            df.at[row.Index, 'text'] = mean_vector
+            features.append(mean_vector)
+        features = np.array(features)
+        target = df.label.values
+        
+        np.save(f'./data/gold/{name}_{encoder_type}_features.npy', features)
+        np.save(f'./data/gold/{name}_{encoder_type}_target.npy', target)
 
-    print(f"Empty sentences encountered: {empty_rows}\n"
-          f"Sentences with only unknown words: {only_unknown_words}")
-
-    print("to csv.....")
-    train.to_csv('./data/gold/train.csv', index=False)
-    valid.to_csv('./data/gold/valid.csv', index=False)
-    test.to_csv('./data/gold/test.csv', index=False)
+    # TODO: possibly we can just drop the invalid texts
+    #       in earlier preprocessing steps, so we can
+    #       replace with an assert here instead (mansur)
+    print(f"Number of invalid texts: {n_invalid_texts}")
+    print(f"Number of texts with only unknown words: {n_only_unknown_words}")
 
 if __name__ == '__main__':
     make_sentence_embeddings()
