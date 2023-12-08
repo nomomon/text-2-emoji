@@ -65,7 +65,7 @@ def get_optimizer(model, optimizer_type, learning_rate):
 def train_model(
         model, optimizer, epochs, 
         train_features, train_target,
-        valid_features, valid_target):
+        valid_features, valid_target, verbose=False):
     """
     Train a model
 
@@ -93,8 +93,11 @@ def train_model(
 
     model.to(device)
 
+    epoch_iter = range(epochs)
+    if verbose: epoch_iter = tqdm(epoch_iter, desc="Training")
+
     # Train model
-    for epoch in tqdm(range(epochs)):
+    for epoch in epoch_iter:
 
         # Forward pass
         train_predictions = model(train_features)
