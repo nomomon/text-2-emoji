@@ -28,5 +28,5 @@ def generate_embeddings(filename, n_dimensions, size):
 
 if __name__ == "__main__":
     generate_embeddings("train_random_embeddings", 300, 900)
-    generate_embeddings("val_random_embeddings", 300, 100)
+    generate_embeddings("valid_random_embeddings", 300, 100)
     generate_embeddings("test_random_embeddings",  300, 1000)
