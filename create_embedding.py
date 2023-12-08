@@ -29,7 +29,7 @@ def make_sentence_embeddings():
             except TypeError:  
                 # (e.g. empty sentence)
                 n_invalid_texts += 1
-                df.at[row.Index, 'text'] = invalid_text_vec(v_size)
+                features.append(invalid_text_vec(v_size))
                 continue
 
             word_vectors = []
@@ -42,7 +42,7 @@ def make_sentence_embeddings():
 
             if len(word_vectors) == 0:
                 n_only_unknown_words += 1
-                df.at[row.Index, 'text'] = invalid_text_vec(v_size)
+                features.append(invalid_text_vec(v_size))
                 continue
 
             word_vectors = np.array(word_vectors)
@@ -50,6 +50,9 @@ def make_sentence_embeddings():
             features.append(mean_vector)
         features = np.array(features)
         target = df.label.values
+
+        assert features.shape == (len(df), v_size)
+        assert len(features) == len(target)
         
         np.save(f'./data/gold/{name}_{encoder_type}_features.npy', features)
         np.save(f'./data/gold/{name}_{encoder_type}_target.npy', target)
