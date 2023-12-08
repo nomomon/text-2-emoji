@@ -11,6 +11,6 @@ if __name__ == "__main__":
         "epochs": [5, 10, 20],
     }
 
-    grid_search_model = GridSearchModel(hyperparameters, "w2v")
+    grid_search_model = GridSearchModel(hyperparameters, "word2vec")
     grid_search_model.run()
     print(grid_search_model.get_best_hyperparameters())
