@@ -1,8 +1,11 @@
 import pandas as pd
-import itertools
-from project_name.features.embedding_processing import balance_dataframe, reduce_dimensions_pca
-from project_name.models.nn_classifier import get_model, get_optimizer, train_model
+import numpy as np
 from tqdm import tqdm
+
+import itertools
+
+from project_name.features.embedding_processing import balance_data, reduce_dimensions_pca
+from project_name.models.nn_classifier import get_model, get_optimizer, train_model
 
 
 class GridSearchModel():
@@ -18,9 +21,11 @@ class GridSearchModel():
         Initialize the model, load data and create results dataframe
         """
 
-        # Load data, change to real embeddings later
-        self.train_data = pd.read_csv(f"data/gold/train_{embedding_type}_embeddings.csv")
-        self.val_data = pd.read_csv(f"data/gold/val_{embedding_type}_embeddings.csv")
+        # Load data
+        self.train_features = np.load(f"data/gold/train_{embedding_type}_features.npy")
+        self.valid_features = np.load(f"data/gold/valid_{embedding_type}_features.npy")
+        self.train_target = np.load(f"data/gold/train_{embedding_type}_target.npy")
+        self.valid_target = np.load(f"data/gold/valid_{embedding_type}_target.npy")
 
         # Create results dataframe
         self.results = pd.DataFrame(columns=self.hyperparameters_keys + ["accuracy"])
@@ -42,9 +47,10 @@ class GridSearchModel():
         # Create a dictionary of hyperparameters and accuracy
         hyperparameters = dict(zip(self.hyperparameters.keys(), hyperparameter_combination))
         hyperparameters["accuracy"] = accuracy
+        hyperparameters = pd.Series(hyperparameters)
 
-        # Add results to dataframe, use concat
-        self.results = pd.concat([self.results, pd.DataFrame(hyperparameters, index=[0])])
+        # Add results to dataframe
+        self.results.loc[len(self.results)] = hyperparameters
 
     def run(self, verbose=True):
         """
@@ -55,7 +61,7 @@ class GridSearchModel():
         hyperparameter_combinations = list(itertools.product(*self.hyperparameters.values()))
 
         if verbose:
-            hyperparameter_combinations = tqdm(hyperparameter_combinations)
+            hyperparameter_combinations = tqdm(hyperparameter_combinations, desc="Hyperparameter search")
 
         # Iterate over all combinations
         for hyperparameter_combination in hyperparameter_combinations:
@@ -63,22 +69,30 @@ class GridSearchModel():
             # Unpack hyperparameters
             n_dimensions, n_layers, n_neurons, optimizer_type, learning_rate, epochs = hyperparameter_combination
 
-            # Balance and reduce dimensions of data
-            reduced_train_data = reduce_dimensions_pca(self.train_data, n_dimensions)
-            balanced_train_data = balance_dataframe(reduced_train_data)
-            reduced_val_data = reduce_dimensions_pca(self.val_data, n_dimensions)
+            # Reduce dimensions of data
+            reduced_train_features = reduce_dimensions_pca(self.train_features, n_dimensions)
+            reduced_valid_features = reduce_dimensions_pca(self.valid_features, n_dimensions)
+
+            # Balance training data
+            balanced_train_features, balanced_train_target = balance_data(reduced_train_features, self.train_target)
 
             # Create model
             model = get_model(n_dimensions, n_layers, n_neurons)
             optimizer = get_optimizer(model, optimizer_type, learning_rate)
 
             # Train model
-            accuracy = train_model(model, optimizer, epochs, balanced_train_data, reduced_val_data)
+            accuracy = train_model(
+                model, optimizer, epochs, 
+                train_features = balanced_train_features, 
+                train_target   = balanced_train_target,
+                valid_features = reduced_valid_features,
+                valid_target   = self.valid_target)
 
             # Save results
             self.add_result(hyperparameter_combination, accuracy)
 
         # Save results to csv
+        self.results.sort_values("accuracy", ascending=False, inplace=True)
         self.results.to_csv("out/grid_search_results.csv", index=False)
 
     def get_best_hyperparameters(self):
