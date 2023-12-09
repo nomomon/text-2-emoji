@@ -4,12 +4,12 @@ from text2emoji.models.grid_search_model import GridSearchModel
 def find_best_model():
     hyperparameters = {
         "dimensionality_reduction": ["pca"],
-        "n_dimensions": [100],
-        "n_layers": [5],
-        "n_neurons": [100],
-        "optimizer_type": ["adam"],
-        "learning_rate": [0.005],
-        "epochs": [400],
+        "n_dimensions": [5, 10, 25, 50, 100],
+        "n_layers": [1, 3, 5, 10],
+        "n_neurons": [20, 50, 100, 200],
+        "optimizer_type": ["adam", "sgd"],
+        "learning_rate": [0.01, 0.001],
+        "epochs": [1, 2, 5, 10, 20, 50, 100, 200, 500],
     }
 
     grid_search_model = GridSearchModel(hyperparameters, "word2vec")
@@ -21,5 +21,4 @@ def find_best_model():
 
 
 if __name__ == "__main__":
-
     find_best_model()
