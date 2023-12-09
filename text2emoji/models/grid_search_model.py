@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import torch
+import matplotlib.pyplot as plt
 
 import itertools
 
@@ -38,8 +39,12 @@ class GridSearchModel:
 
         # Create results dataframe
         self.results = pd.DataFrame(
-            columns=self.hyperparameters_keys + ["accuracy", "model"]
+            columns=self.hyperparameters_keys + ["valid_accuracy", "valid_loss", "training_losses", "valid_losses", "model"]
         )
+
+        # Print number of rows
+        print(f"Number of rows in training data: {len(self.train_features)}")
+        print(f"Number of rows in validation data: {len(self.valid_features)}")
 
         self.hyperparameters = hyperparameters
         self.current_dimensions_reduction = None
@@ -48,7 +53,7 @@ class GridSearchModel:
         # Assert if keys are in hyperparameters
         assert set(self.hyperparameters.keys()) == set(self.hyperparameters_keys)
 
-    def add_result(self, hyperparameter_combination, accuracy, model):
+    def add_result(self, hyperparameter_combination, accuracy, loss, training_losses, valid_losses, model):
         """
         Adds the result of a hyperparameter combination
 
@@ -62,9 +67,14 @@ class GridSearchModel:
         training_details = dict(
             zip(self.hyperparameters.keys(), hyperparameter_combination)
         )
-        training_details["accuracy"] = accuracy
+
         training_details = pd.Series(training_details)
+
+        training_details["valid_accuracy"] = accuracy
+        training_details["valid_loss"] = loss
         training_details["model"] = model
+        training_details["training_losses"] = training_losses
+        training_details["valid_losses"] = valid_losses
 
         # Add results to dataframe
         self.results.loc[len(self.results)] = training_details
@@ -142,7 +152,7 @@ class GridSearchModel:
             optimizer = get_optimizer(model, optimizer_type, learning_rate)
 
             # Train model
-            accuracy = train_model(
+            accuracy, loss, training_losses, validation_losses = train_model(
                 model,
                 optimizer,
                 epochs,
@@ -153,10 +163,10 @@ class GridSearchModel:
             )
 
             # Save results
-            self.add_result(hyperparameter_combination, accuracy, model)
+            self.add_result(hyperparameter_combination, accuracy, loss, training_losses, validation_losses, model)
 
         # Save results to csv
-        self.results.sort_values("accuracy", ascending=False, inplace=True)
+        self.results.sort_values("valid_accuracy", ascending=False, inplace=True)
 
     def get_best_hyperparameters(self):
         """
@@ -168,6 +178,21 @@ class GridSearchModel:
 
         return self.results.iloc[0]
 
+    def plot_loss_curve(self):
+        """
+        Plot the loss curve of the best model
+        """
+
+        # Get losses
+        training_losses = self.get_best_hyperparameters()["training_losses"]
+        valid_losses = self.get_best_hyperparameters()["valid_losses"]
+
+        # Plot losses
+        plt.plot(training_losses, label="Training loss")
+        plt.plot(valid_losses, label="Validation loss")
+        plt.legend()
+        plt.show()
+
     def save_results(self):
         """
         Save the results to a csv file
@@ -177,8 +202,16 @@ class GridSearchModel:
         best_model = self.get_best_hyperparameters()["model"]
         torch.save(best_model, "out/best_model.pt")
 
-        # Remove models from results
+        # Save losses of best model
+        training_losses = self.get_best_hyperparameters()["training_losses"]
+        valid_losses = self.get_best_hyperparameters()["valid_losses"]
+        np.save("out/training_losses.npy", training_losses)
+        np.save("out/valid_losses.npy", valid_losses)
+
+        # Remove models and losses from results
         self.results.drop("model", axis=1, inplace=True)
+        self.results.drop("training_losses", axis=1, inplace=True)
+        self.results.drop("valid_losses", axis=1, inplace=True)
 
         # Save results
         self.results.to_csv("out/grid_search_results.csv", index=False)
