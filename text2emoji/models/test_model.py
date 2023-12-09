@@ -33,7 +33,11 @@ def test_best_model(type):
 
     # Get accuracy
     accuracy, loss = get_performance(
-        best_model, torch.Tensor(test_embeddings).to(device), torch.Tensor(test_labels).to(device)
+        best_model, torch.tensor(test_embeddings).to(device), torch.tensor(test_labels).to(device)
     )
 
     print(f"Accuracy: {accuracy:.2f}")
+
+
+if __name__ == "__main__":
+    test_best_model("word2vec")
