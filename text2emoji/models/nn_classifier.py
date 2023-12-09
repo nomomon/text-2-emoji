@@ -1,5 +1,6 @@
 import torch
 from tqdm import tqdm
+import numpy as np
 
 
 def get_model(n_inputs, n_layers, n_neurons, n_outputs=20):
@@ -30,7 +31,6 @@ def get_model(n_inputs, n_layers, n_neurons, n_outputs=20):
 
     # Add output layer
     layers.append(torch.nn.Linear(n_neurons, n_outputs))
-    layers.append(torch.nn.Softmax(dim=1))
 
     # Create model
     model = torch.nn.Sequential(*layers)
@@ -62,6 +62,31 @@ def get_optimizer(model, optimizer_type, learning_rate):
     return optimizer
 
 
+def get_valid_performance(model, valid_features, valid_target):
+    """
+    Get the validation accuracy of a model, assuming the model is already on the GPU
+
+    Args:
+        model (torch.nn.Sequential): The model to get the validation accuracy of
+        valid_features (np.array): The validation features
+        valid_target (np.array): The validation target labels
+
+    Returns:
+        float: The validation accuracy and loss
+    """
+
+    # Evaluate model
+    valid_predictions = model(valid_features)
+    valid_predictions = torch.nn.functional.softmax(valid_predictions, dim=1)
+    correct_predictions = valid_predictions.argmax(dim=1) == valid_target
+    valid_accuracy = correct_predictions.float().mean().item()
+
+    # Get loss
+    valid_loss = torch.nn.functional.cross_entropy(valid_predictions, valid_target).item()
+
+    return valid_accuracy, valid_loss
+
+
 def train_model(
         model, optimizer, epochs,
         train_features, train_target,
@@ -81,6 +106,9 @@ def train_model(
 
     Returns:
         float: The accuracy of the model on the validation data
+        float: The loss of the model on the validation data
+        np.array: The training loss for each epoch
+        np.array: The validation loss for each epoch
     """
 
     # Check if GPU is available
@@ -98,12 +126,20 @@ def train_model(
     if verbose:
         epoch_iter = tqdm(epoch_iter, desc="Training")
 
+    # Create numpy array to store training and validation loss
+    train_loss_array = np.zeros(epochs)
+    valid_loss_array = np.zeros(epochs)
+
     # Train model
     for epoch in epoch_iter:
 
         # Forward pass
         train_predictions = model(train_features)
-        train_loss = torch.nn.functional.cross_entropy(train_predictions, train_target.long())
+        train_loss = torch.nn.functional.cross_entropy(train_predictions, train_target)
+
+        # Store losses
+        train_loss_array[epoch] = train_loss.item()
+        valid_loss_array[epoch] = get_valid_performance(model, valid_features, valid_target)[1]
 
         # Backward pass
         optimizer.zero_grad()
@@ -111,8 +147,6 @@ def train_model(
         optimizer.step()
 
     # Evaluate model
-    valid_predictions = model(valid_features)
-    correct_predictions = valid_predictions.argmax(dim=1) == valid_target
-    valid_accuracy = correct_predictions.float().mean().item()
+    valid_accuracy, valid_loss = get_valid_performance(model, valid_features, valid_target)
 
-    return valid_accuracy
+    return valid_accuracy, valid_loss, train_loss_array, valid_loss_array
