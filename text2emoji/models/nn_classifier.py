@@ -35,6 +35,11 @@ def get_model(n_inputs, n_layers, n_neurons, n_outputs=20):
     # Create model
     model = torch.nn.Sequential(*layers)
 
+    # Initialize weights
+    for layer in model:
+        if isinstance(layer, torch.nn.Linear):
+            torch.nn.init.xavier_uniform_(layer.weight)
+
     return model
 
 
@@ -62,7 +67,7 @@ def get_optimizer(model, optimizer_type, learning_rate):
     return optimizer
 
 
-def get_valid_performance(model, valid_features, valid_target):
+def get_performance(model, features, target):
     """
     Get the validation accuracy of a model, assuming the model is already on the GPU
 
@@ -76,22 +81,22 @@ def get_valid_performance(model, valid_features, valid_target):
     """
 
     # Evaluate model
-    valid_predictions = model(valid_features)
-    valid_predictions = torch.nn.functional.softmax(valid_predictions, dim=1)
-    correct_predictions = valid_predictions.argmax(dim=1) == valid_target
-    valid_accuracy = correct_predictions.float().mean().item()
+    predictions = model(features)
+    softmax_predictions = torch.nn.functional.softmax(predictions, dim=1)
+    correct_predictions = softmax_predictions.argmax(dim=1) == target
+    accuracy = correct_predictions.float().mean().item()
 
     # Get loss
-    valid_loss = torch.nn.functional.cross_entropy(valid_predictions, valid_target).item()
+    loss = torch.nn.functional.cross_entropy(predictions, target).item()
 
-    return valid_accuracy, valid_loss
+    return accuracy, loss
 
 
 def train_model(
         model, optimizer, epochs,
         train_features, train_target,
         valid_features, valid_target,
-        verbose=False, batch_size=128):
+        verbose=True, batch_size=128):
     """
     Train a model
 
@@ -107,6 +112,8 @@ def train_model(
     Returns:
         float: The accuracy of the model on the validation data
         float: The loss of the model on the validation data
+        float: The accuracy of the model on training data
+        float: The loss of the model on training data
         np.array: The training loss for each epoch
         np.array: The validation loss for each epoch
     """
@@ -139,7 +146,7 @@ def train_model(
 
         # Store losses
         train_loss_array[epoch] = train_loss.item()
-        valid_loss_array[epoch] = get_valid_performance(model, valid_features, valid_target)[1]
+        valid_loss_array[epoch] = get_performance(model, valid_features, valid_target)[1]
 
         # Backward pass
         optimizer.zero_grad()
@@ -147,6 +154,9 @@ def train_model(
         optimizer.step()
 
     # Evaluate model
-    valid_accuracy, valid_loss = get_valid_performance(model, valid_features, valid_target)
+    valid_accuracy, valid_loss = get_performance(model, valid_features, valid_target)
 
-    return valid_accuracy, valid_loss, train_loss_array, valid_loss_array
+    # Get training accuracy
+    train_accuracy, train_loss = get_performance(model, train_features, train_target)
+
+    return valid_accuracy, valid_loss, train_accuracy, train_loss, train_loss_array, valid_loss_array
