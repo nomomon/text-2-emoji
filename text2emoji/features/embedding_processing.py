@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.decomposition import PCA
+from umap import UMAP
 
 
 def balance_data(features, target, n_samples=None):
@@ -30,7 +31,7 @@ def balance_data(features, target, n_samples=None):
     return features_resampled, target_resampled
 
 
-def reduce_dimensions_pca(features, n_dimensions):
+def reduce_dimensions(features, n_dimensions, technique="pca"):
     """
     Reduce the number of dimensions using PCA (for now at least)
 
@@ -43,7 +44,13 @@ def reduce_dimensions_pca(features, n_dimensions):
     """
 
     # Reduce dimensions
-    pca = PCA(n_components=n_dimensions)
-    features_reduced = pca.fit_transform(features)
+    if technique == "pca":
+        pca = PCA(n_components=n_dimensions)
+        features_reduced = pca.fit_transform(features)
+    elif technique == "umap":
+        reducer = UMAP(n_components=n_dimensions, n_neighbors=10, n_jobs=-1)
+        features_reduced = reducer.fit_transform(features)
+    else:
+        raise ValueError(f"Unknown dimensionality reduction technique: {technique}")
 
     return features_reduced
