@@ -5,7 +5,7 @@ import torch
 
 import itertools
 
-from text2emoji.features.embedding_processing import balance_data, reduce_dimensions_pca
+from text2emoji.features.embedding_processing import balance_data, reduce_dimensions
 from text2emoji.models.nn_classifier import get_model, get_optimizer, train_model
 
 
@@ -16,6 +16,7 @@ class GridSearchModel:
 
     # Use list for keys
     hyperparameters_keys = [
+        "dimensionality_reduction",
         "n_dimensions",
         "n_layers",
         "n_neurons",
@@ -36,9 +37,13 @@ class GridSearchModel:
         self.valid_target = np.load(f"data/gold/valid_{embedding_type}_target.npy")
 
         # Create results dataframe
-        self.results = pd.DataFrame(columns=self.hyperparameters_keys + ["accuracy", "model"])
+        self.results = pd.DataFrame(
+            columns=self.hyperparameters_keys + ["accuracy", "model"]
+        )
 
         self.hyperparameters = hyperparameters
+        self.current_dimensions_reduction = None
+        self.n_dimensions = None
 
         # Assert if keys are in hyperparameters
         assert set(self.hyperparameters.keys()) == set(self.hyperparameters_keys)
@@ -64,6 +69,33 @@ class GridSearchModel:
         # Add results to dataframe
         self.results.loc[len(self.results)] = training_details
 
+    def reduce_and_balance_data(self, dimensions_reduction, n_dimensions):
+        """
+        Reduce the dimensions of the data and balance the training data
+
+        Args:
+            dimensions_reduction (string): The dimensionality reduction technique to use
+            n_dimensions (int): The number of dimensions to reduce to
+
+        Returns:
+            tuple: The balanced training features, balanced training target and reduced validation features
+        """
+
+        # Reduce dimensions of data
+        reduced_train_features = reduce_dimensions(
+            self.train_features, n_dimensions, dimensions_reduction
+        )
+        reduced_valid_features = reduce_dimensions(
+            self.valid_features, n_dimensions, dimensions_reduction
+        )
+
+        # Balance training data
+        balanced_train_features, balanced_train_target = balance_data(
+            reduced_train_features, self.train_target
+        )
+
+        return balanced_train_features, balanced_train_target, reduced_valid_features
+
     def run(self, verbose=True):
         """
         Run the grid search by exhaustively iterating over all hyperparameter combinations
@@ -81,8 +113,10 @@ class GridSearchModel:
 
         # Iterate over all combinations
         for hyperparameter_combination in hyperparameter_combinations:
+
             # Unpack hyperparameters
             (
+                dimensions_reduction,
                 n_dimensions,
                 n_layers,
                 n_neurons,
@@ -91,18 +125,17 @@ class GridSearchModel:
                 epochs,
             ) = hyperparameter_combination
 
-            # Reduce dimensions of data
-            reduced_train_features = reduce_dimensions_pca(
-                self.train_features, n_dimensions
-            )
-            reduced_valid_features = reduce_dimensions_pca(
-                self.valid_features, n_dimensions
-            )
+            # Only balance and reduce data when the technique and number of dimensions changed
+            if (n_dimensions != self.n_dimensions) or (dimensions_reduction != self.current_dimensions_reduction):
 
-            # Balance training data
-            balanced_train_features, balanced_train_target = balance_data(
-                reduced_train_features, self.train_target
-            )
+                (
+                    balanced_train_features,
+                    balanced_train_target,
+                    reduced_valid_features,
+                ) = self.reduce_and_balance_data(dimensions_reduction, n_dimensions)
+
+                self.current_dimensions_reduction = dimensions_reduction
+                self.n_dimensions = n_dimensions
 
             # Create model
             model = get_model(n_dimensions, n_layers, n_neurons)

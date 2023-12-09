@@ -3,6 +3,7 @@ from text2emoji.models.grid_search_model import GridSearchModel
 
 def find_best_model():
     hyperparameters = {
+        "dimensionality_reduction": ["pca"],
         "n_dimensions": [10, 25, 50],
         "n_layers": [1, 2],
         "n_neurons": [20, 50],

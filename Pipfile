@@ -17,6 +17,7 @@ gensim = "*"
 tqdm = "*"
 imbalanced-learn = "*"
 torch = {version = "*", index = "downloadpytorch"}
+umap-learn = "*"
 
 [dev-packages]
 
