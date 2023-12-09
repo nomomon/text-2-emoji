@@ -1,4 +1,5 @@
 from text2emoji.models.grid_search_model import GridSearchModel
+from text2emoji.models.test_model import test_best_model
 
 
 def find_best_model():
@@ -21,4 +22,5 @@ def find_best_model():
 
 
 if __name__ == "__main__":
-    find_best_model()
+    # find_best_model()
+    test_best_model("word2vec")
