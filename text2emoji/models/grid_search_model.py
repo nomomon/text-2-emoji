@@ -39,7 +39,16 @@ class GridSearchModel:
 
         # Create results dataframe
         self.results = pd.DataFrame(
-            columns=self.hyperparameters_keys + ["valid_accuracy", "valid_loss", "training_losses", "valid_losses", "model"]
+            columns=self.hyperparameters_keys
+            + [
+                "valid_accuracy",
+                "valid_loss",
+                "train_accuracy",
+                "train_loss",
+                "training_losses",
+                "valid_losses",
+                "model",
+            ]
         )
 
         # Print number of rows
@@ -53,7 +62,17 @@ class GridSearchModel:
         # Assert if keys are in hyperparameters
         assert set(self.hyperparameters.keys()) == set(self.hyperparameters_keys)
 
-    def add_result(self, hyperparameter_combination, accuracy, loss, training_losses, valid_losses, model):
+    def add_result(
+        self,
+        hyperparameter_combination,
+        valid_accuracy,
+        valid_loss,
+        train_accuracy,
+        train_loss,
+        training_losses,
+        valid_losses,
+        model,
+    ):
         """
         Adds the result of a hyperparameter combination
 
@@ -70,8 +89,10 @@ class GridSearchModel:
 
         training_details = pd.Series(training_details)
 
-        training_details["valid_accuracy"] = accuracy
-        training_details["valid_loss"] = loss
+        training_details["valid_accuracy"] = valid_accuracy
+        training_details["valid_loss"] = valid_loss
+        training_details["train_accuracy"] = train_accuracy
+        training_details["train_loss"] = train_loss
         training_details["model"] = model
         training_details["training_losses"] = training_losses
         training_details["valid_losses"] = valid_losses
@@ -123,7 +144,6 @@ class GridSearchModel:
 
         # Iterate over all combinations
         for hyperparameter_combination in hyperparameter_combinations:
-
             # Unpack hyperparameters
             (
                 dimensions_reduction,
@@ -136,8 +156,9 @@ class GridSearchModel:
             ) = hyperparameter_combination
 
             # Only balance and reduce data when the technique and number of dimensions changed
-            if (n_dimensions != self.n_dimensions) or (dimensions_reduction != self.current_dimensions_reduction):
-
+            if (n_dimensions != self.n_dimensions) or (
+                dimensions_reduction != self.current_dimensions_reduction
+            ):
                 (
                     balanced_train_features,
                     balanced_train_target,
@@ -152,7 +173,14 @@ class GridSearchModel:
             optimizer = get_optimizer(model, optimizer_type, learning_rate)
 
             # Train model
-            accuracy, loss, training_losses, validation_losses = train_model(
+            (
+                valid_accuracy,
+                valid_loss,
+                train_accuracy,
+                train_loss,
+                training_losses,
+                validation_losses,
+            ) = train_model(
                 model,
                 optimizer,
                 epochs,
@@ -163,10 +191,19 @@ class GridSearchModel:
             )
 
             # Save results
-            self.add_result(hyperparameter_combination, accuracy, loss, training_losses, validation_losses, model)
+            self.add_result(
+                hyperparameter_combination,
+                valid_accuracy,
+                valid_loss,
+                train_accuracy,
+                train_loss,
+                training_losses,
+                validation_losses,
+                model,
+            )
 
         # Save results to csv
-        self.results.sort_values("valid_accuracy", ascending=False, inplace=True)
+        self.results.sort_values("valid_loss", ascending=True, inplace=True)
 
     def get_best_hyperparameters(self):
         """
