@@ -35,11 +35,6 @@ def get_model(n_inputs, n_layers, n_neurons, n_outputs=20):
     # Create model
     model = torch.nn.Sequential(*layers)
 
-    # Initialize weights
-    for layer in model:
-        if isinstance(layer, torch.nn.Linear):
-            torch.nn.init.xavier_uniform_(layer.weight)
-
     return model
 
 
@@ -96,7 +91,7 @@ def train_model(
         model, optimizer, epochs,
         train_features, train_target,
         valid_features, valid_target,
-        verbose=True, batch_size=128):
+        verbose=False, batch_size=128):
     """
     Train a model
 
