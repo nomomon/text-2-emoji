@@ -19,6 +19,7 @@ class GridSearchModel:
     hyperparameters_keys = [
         "dimensionality_reduction",
         "n_dimensions",
+        "balancing_technique",
         "n_layers",
         "n_neurons",
         "optimizer_type",
@@ -109,7 +110,7 @@ class GridSearchModel:
         # Add results to dataframe
         self.results.loc[len(self.results)] = training_details
 
-    def reduce_and_balance_data(self, dimensions_reduction, n_dimensions):
+    def reduce_and_balance_data(self, dimensions_reduction, n_dimensions, balance_technique):
         """
         Reduce the dimensions of the data and balance the training data
 
@@ -131,7 +132,7 @@ class GridSearchModel:
 
         # Balance training data
         balanced_train_features, balanced_train_target = balance_data(
-            reduced_train_features, self.train_target
+            reduced_train_features, self.train_target, balance_technique
         )
 
         return balanced_train_features, balanced_train_target, reduced_valid_features
@@ -157,6 +158,7 @@ class GridSearchModel:
             (
                 dimensions_reduction,
                 n_dimensions,
+                balance_technique,
                 n_layers,
                 n_neurons,
                 optimizer_type,
@@ -172,10 +174,13 @@ class GridSearchModel:
                     balanced_train_features,
                     balanced_train_target,
                     reduced_valid_features,
-                ) = self.reduce_and_balance_data(dimensions_reduction, n_dimensions)
+                ) = self.reduce_and_balance_data(dimensions_reduction, n_dimensions, balance_technique)
 
                 self.current_dimensions_reduction = dimensions_reduction
                 self.n_dimensions = n_dimensions
+
+            if dimensions_reduction == "none":
+                n_dimensions = self.train_features.shape[1]
 
             # Create model
             model = get_model(n_dimensions, n_layers, n_neurons)

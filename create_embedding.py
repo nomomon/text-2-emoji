@@ -57,5 +57,5 @@ def make_sentence_embeddings(encoder_type="word2vec"):
 
 
 if __name__ == '__main__':
-    make_sentence_embeddings("mobert")
+    make_sentence_embeddings("word2vec")
     print("done")
