@@ -38,6 +38,14 @@ def test_best_model(type):
 
     print(f"Accuracy: {accuracy:.2f}")
 
+    # Find the most frequent label
+    unique_labels, counts = np.unique(test_labels, return_counts=True)
+    most_frequent_label = unique_labels[np.argmax(counts)]
+
+    # Find the accuracy of a model that always predicts the most frequent label
+    baseline_accuracy = (test_labels == most_frequent_label).mean()
+    print(f"Baseline accuracy: {baseline_accuracy}")
+
 
 if __name__ == "__main__":
     test_best_model("word2vec")

@@ -3,7 +3,7 @@ import gensim.downloader as w2v_api
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import normalize
+# from sklearn.preprocessing import normalize
 
 
 def invalid_text_vec(v_size):
@@ -49,11 +49,13 @@ def make_sentence_embeddings():
             word_vectors = np.array(word_vectors)
             mean_vector = word_vectors.mean(axis=0)
             features.append(mean_vector)
+
         features = np.array(features)
         target = df.label.values
 
         # Normalize the features to unit length
-        features = normalize(features)
+        # Seems like this results in worse performance
+        # features = normalize(features)
 
         assert features.shape == (len(df), v_size)
         assert len(features) == len(target)
