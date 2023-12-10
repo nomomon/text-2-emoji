@@ -10,48 +10,62 @@ def invalid_text_vec(v_size):
     return np.zeros(v_size, dtype=np.float32)
 
 
-def make_sentence_embeddings():
+def make_w2v_embeddings(df, name, w2v_model):
+
+    features = []
+    v_size = w2v_model.vector_size
+    n_invalid_texts = 0
+    n_only_unknown_words = 0
+
+    for row in tqdm(df.itertuples(), total=len(df), desc=name):
+
+        try:
+            sentence = nltk.word_tokenize(row.text)
+        except TypeError:
+            # (e.g. empty sentence)
+            n_invalid_texts += 1
+            features.append(invalid_text_vec(v_size))
+            continue
+
+        word_vectors = []
+        for word in sentence:
+            try:
+                word_vectors.append(w2v_model[word])
+            except KeyError:
+                # ignore (e.g. unknown word)
+                continue
+
+        if len(word_vectors) == 0:
+            n_only_unknown_words += 1
+            features.append(invalid_text_vec(v_size))
+            continue
+
+        word_vectors = np.array(word_vectors)
+        mean_vector = word_vectors.mean(axis=0)
+        features.append(mean_vector)
+
+    return np.array(features), n_invalid_texts, n_only_unknown_words
+
+
+def make_sentence_embeddings(encoder_type="word2vec"):
     train = pd.read_csv('./data/silver/train.csv')
     valid = pd.read_csv('./data/silver/valid.csv')
     test = pd.read_csv('./data/silver/test.csv')
 
-    encoder_type = "word2vec"
-    w2v_model = w2v_api.load("word2vec-google-news-300")
-    v_size = w2v_model.vector_size
+    if encoder_type == "word2vec":
+        model = w2v_api.load("word2vec-google-news-300")
+        v_size = model.vector_size
 
     n_invalid_texts = 0
     n_only_unknown_words = 0
     for df, name in [(train, "train"), (valid, "valid"), (test, "test")]:
-        features = []
-        for row in tqdm(df.itertuples(), total=len(df), desc=name):
-            # TODO: later extract this into a function to use for preprocessing (mansur)
-            try:
-                sentence = nltk.word_tokenize(row.text)
-            except TypeError:
-                # (e.g. empty sentence)
-                n_invalid_texts += 1
-                features.append(invalid_text_vec(v_size))
-                continue
 
-            word_vectors = []
-            for word in sentence:
-                try:
-                    word_vectors.append(w2v_model[word])
-                except KeyError:
-                    # ignore (e.g. unknown word)
-                    continue
+        if encoder_type == "word2vec":
+            features, set_invalid_texts, set_unknown_words = make_w2v_embeddings(df, name, model)
+            target = df.label.values
 
-            if len(word_vectors) == 0:
-                n_only_unknown_words += 1
-                features.append(invalid_text_vec(v_size))
-                continue
-
-            word_vectors = np.array(word_vectors)
-            mean_vector = word_vectors.mean(axis=0)
-            features.append(mean_vector)
-
-        features = np.array(features)
-        target = df.label.values
+            n_invalid_texts += set_invalid_texts
+            n_only_unknown_words += set_unknown_words
 
         # Normalize the features to unit length
         # Seems like this results in worse performance
