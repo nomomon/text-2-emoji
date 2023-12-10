@@ -20,17 +20,22 @@ def get_model(n_inputs, n_layers, n_neurons, n_outputs=20):
     # Create a list of layers
     layers = []
 
-    # Add input layer
-    layers.append(torch.nn.Linear(n_inputs, n_neurons))
-    layers.append(torch.nn.ReLU())
+    if n_layers == 0:
+        # No hidden layers
+        layers.append(torch.nn.Linear(n_inputs, n_outputs))
+    else:
 
-    # Add hidden layers
-    for _ in range(n_layers):
-        layers.append(torch.nn.Linear(n_neurons, n_neurons))
+        # Add input layer
+        layers.append(torch.nn.Linear(n_inputs, n_neurons))
         layers.append(torch.nn.ReLU())
 
-    # Add output layer
-    layers.append(torch.nn.Linear(n_neurons, n_outputs))
+        # Add hidden layers
+        for _ in range(n_layers):
+            layers.append(torch.nn.Linear(n_neurons, n_neurons))
+            layers.append(torch.nn.ReLU())
+
+        # Add output layer
+        layers.append(torch.nn.Linear(n_neurons, n_outputs))
 
     # Create model
     model = torch.nn.Sequential(*layers)
@@ -135,6 +140,8 @@ def train_model(
     # Train model
     for epoch in epoch_iter:
 
+        optimizer.zero_grad()
+
         # Forward pass
         train_predictions = model(train_features)
         train_loss = torch.nn.functional.cross_entropy(train_predictions, train_target)
@@ -144,7 +151,6 @@ def train_model(
         valid_loss_array[epoch] = get_performance(model, valid_features, valid_target)[1]
 
         # Backward pass
-        optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
 

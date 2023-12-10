@@ -1,9 +1,10 @@
 import pandas as pd
 from sklearn.decomposition import PCA
 from umap import UMAP
+from imblearn.over_sampling import RandomOverSampler
 
 
-def balance_data(features, target, n_samples=None):
+def balance_data(features, target, balance_technique, n_samples=None):
     """
     Balance a dataset by taking
     # TODO: add description
@@ -19,16 +20,30 @@ def balance_data(features, target, n_samples=None):
     df = pd.DataFrame(features)
     df["target"] = target
 
-    if n_samples is None:
-        n_samples = df.target.value_counts().median().astype(int)
+    if balance_technique == "none":
 
-    # Balance dataset
-    df = df.groupby("target").apply(lambda x: x.sample(min(len(x), n_samples)))
+        return features, target
 
-    features_resampled = df.drop("target", axis=1).values
-    target_resampled = df.target.values
+    elif balance_technique == "undersample":
 
-    return features_resampled, target_resampled
+        if n_samples is None:
+            n_samples = df.target.value_counts().median().astype(int)
+
+        # Balance dataset
+        df = df.groupby("target").apply(lambda x: x.sample(min(len(x), n_samples)))
+
+        features_resampled = df.drop("target", axis=1).values
+        target_resampled = df.target.values
+
+        return features_resampled, target_resampled
+
+    elif balance_technique == "oversample":
+        oversampler = RandomOverSampler()
+        features_resampled, target_resampled = oversampler.fit_resample(features, target)
+        return features_resampled, target_resampled
+
+    else:
+        raise ValueError(f"Unknown balancing technique: {balance_technique}")
 
 
 def reduce_dimensions(features, n_dimensions, technique="pca"):
@@ -50,6 +65,8 @@ def reduce_dimensions(features, n_dimensions, technique="pca"):
     elif technique == "umap":
         reducer = UMAP(n_components=n_dimensions, n_neighbors=10, n_jobs=-1)
         features_reduced = reducer.fit_transform(features)
+    elif technique == "none":
+        features_reduced = features
     else:
         raise ValueError(f"Unknown dimensionality reduction technique: {technique}")
 
