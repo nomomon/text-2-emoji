@@ -55,6 +55,15 @@ class GridSearchModel:
         print(f"Number of rows in training data: {len(self.train_features)}")
         print(f"Number of rows in validation data: {len(self.valid_features)}")
 
+        # Print the most frequent label
+        unique_labels, counts = np.unique(self.train_target, return_counts=True)
+        most_frequent_label = unique_labels[np.argmax(counts)]
+        print(f"Most frequent label: {most_frequent_label}")
+
+        # Print the accuracy of a model that always predicts the most frequent label
+        baseline_accuracy = (self.valid_target == most_frequent_label).mean()
+        print(f"Baseline validation accuracy: {baseline_accuracy}")
+
         self.hyperparameters = hyperparameters
         self.current_dimensions_reduction = None
         self.n_dimensions = None
