@@ -106,7 +106,7 @@ def eval_best_model(type, eval_set="valid"):
     plt.savefig(f"out/confusion_matrix_{eval_set}.eps")
     plt.savefig(f"out/confusion_matrix_{eval_set}.png")
 
-
+    signif = 0.05
     p_val_most_freq = bootstrap(probabilties.argmax(axis=1), most_freq_labels, eval_labels)
     p_val_random = bootstrap(probabilties.argmax(axis=1), random_labels, eval_labels)
 
@@ -117,9 +117,9 @@ Bootstrap test for model vs most frequent
     - H1: model != most frequent
 
     p-value: {p_val_most_freq:.5f}
-    significance level: 0.05
-    p-value < significance level: {p_val_most_freq < 0.05}
-    {"reject H0" if p_val_most_freq < 0.05 else "do not reject H0"}
+    significance level: {signif}
+    p-value < significance level: {p_val_most_freq <     signif}
+    {"reject H0" if p_val_most_freq <     signif else "do not reject H0"}
 
 
 Bootstrap test for model vs random
@@ -127,9 +127,9 @@ Bootstrap test for model vs random
     - H1: model != random
 
     p-value: {p_val_random:.5f}
-    significance level: 0.05
-    p-value < significance level: {p_val_random < 0.05}
-    {"reject H0" if p_val_random < 0.05 else "do not reject H0"}
+    significance level: {signif}
+    p-value < significance level: {p_val_random < signif}
+    {"reject H0" if p_val_random < signif else "do not reject H0"}
 """
     )
 
