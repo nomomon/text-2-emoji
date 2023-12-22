@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from text2emoji.features.embedding_processing import reduce_dimensions
-from text2emoji.models.bootstrap import bootstrap
-from text2emoji.models.nn_classifier import get_probabilities
 from sklearn.metrics import (
     top_k_accuracy_score,
     f1_score,
@@ -13,6 +10,11 @@ from sklearn.metrics import (
     recall_score,
     confusion_matrix,
 )
+
+from text2emoji.features.embedding_processing import reduce_dimensions
+from text2emoji.models.bootstrap import bootstrap
+from text2emoji.models.nn_classifier import get_probabilities
+
 
 def eval_best_model(type, eval_set="valid"):
     # Load evaluation embeddings
