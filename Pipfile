@@ -16,9 +16,10 @@ pandas = "*"
 gensim = "*"
 tqdm = "*"
 imbalanced-learn = "*"
-torch = {version = "*", index = "downloadpytorch"}
+torch = "*"
 umap-learn = "*"
 transformers = "*"
+scikit-learn = "*"
 pre-commit = "*"
 
 [dev-packages]
