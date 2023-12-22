@@ -4,13 +4,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from text2emoji.features.embedding_processing import reduce_dimensions
+from text2emoji.models.bootstrap import bootstrap
 from text2emoji.models.nn_classifier import get_probabilities
 from sklearn.metrics import (
     top_k_accuracy_score,
     f1_score,
     precision_score,
     recall_score,
-    classification_report, 
     confusion_matrix,
 )
 
@@ -106,4 +106,30 @@ def eval_best_model(type, eval_set="valid"):
     plt.savefig(f"out/confusion_matrix_{eval_set}.eps")
     plt.savefig(f"out/confusion_matrix_{eval_set}.png")
 
+
+    p_val_most_freq = bootstrap(probabilties.argmax(axis=1), most_freq_labels, eval_labels)
+    p_val_random = bootstrap(probabilties.argmax(axis=1), random_labels, eval_labels)
+
+    print(
+f"""
+Bootstrap test for model vs most frequent
+    - H0: model == most frequent
+    - H1: model != most frequent
+
+    p-value: {p_val_most_freq:.5f}
+    significance level: 0.05
+    p-value < significance level: {p_val_most_freq < 0.05}
+    {"reject H0" if p_val_most_freq < 0.05 else "do not reject H0"}
+
+
+Bootstrap test for model vs random
+    - H0: model == random
+    - H1: model != random
+
+    p-value: {p_val_random:.5f}
+    significance level: 0.05
+    p-value < significance level: {p_val_random < 0.05}
+    {"reject H0" if p_val_random < 0.05 else "do not reject H0"}
+"""
+    )
 
