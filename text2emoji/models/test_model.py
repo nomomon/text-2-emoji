@@ -113,18 +113,18 @@ def eval_best_model(type, eval_set="valid"):
     print(
 f"""
 Bootstrap test for model vs most frequent
-    - H0: model == most frequent
-    - H1: model != most frequent
+    - H0: model acc == most frequent acc
+    - H1: model acc >= most frequent acc + 2 * observed_delta
 
     p-value: {p_val_most_freq:.5f}
     significance level: {signif}
-    p-value < significance level: {p_val_most_freq <     signif}
-    {"reject H0" if p_val_most_freq <     signif else "do not reject H0"}
+    p-value < significance level: {p_val_most_freq < signif}
+    {"reject H0" if p_val_most_freq < signif else "do not reject H0"}
 
 
 Bootstrap test for model vs random
-    - H0: model == random
-    - H1: model != random
+    - H0: model acc == random acc
+    - H1: model acc >= random acc + 2 * observed_delta
 
     p-value: {p_val_random:.5f}
     significance level: {signif}
