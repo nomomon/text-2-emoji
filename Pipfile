@@ -19,6 +19,7 @@ imbalanced-learn = "*"
 torch = {version = "*", index = "downloadpytorch"}
 umap-learn = "*"
 transformers = "*"
+pre-commit = "*"
 
 [dev-packages]
 
