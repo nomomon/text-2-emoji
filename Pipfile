@@ -16,7 +16,7 @@ pandas = "*"
 gensim = "*"
 tqdm = "*"
 imbalanced-learn = "*"
-torch = "*"
+torch = {version = "*", index = "downloadpytorch"}
 umap-learn = "*"
 transformers = "*"
 scikit-learn = "*"

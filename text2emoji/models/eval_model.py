@@ -33,24 +33,23 @@ def eval_best_model(type, eval_set="valid"):
         eval_features, n_dimensions, reduction_technique
     )
 
-
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    
+
     # Load best model
-    
+
     best_model = torch.load("out/best_model.pt", map_location=torch.device('cpu'))
     best_model.to(device)
 
     # Get predictions of the model
     probabilties = get_probabilities(
-        best_model, torch.tensor(eval_embeddings).to(device)
+        best_model, torch.tensor(eval_embeddings).float().to(device)
     )
-    
+
     # Get baseline accuracy (most frequent label)
     most_freq_labels = np.full(len(eval_labels), np.argmax(np.bincount(eval_labels)))
     most_freq_one_hot = np.zeros((len(eval_labels), len(np.unique(eval_labels))))
     most_freq_one_hot[np.arange(len(eval_labels)), most_freq_labels] = 1
-    
+
     # Get baseline accuracy (random, with same distribution as labels)
     random_labels = np.random.choice(eval_labels, len(eval_labels))
     random_one_hot = np.zeros((len(eval_labels), len(np.unique(eval_labels))))

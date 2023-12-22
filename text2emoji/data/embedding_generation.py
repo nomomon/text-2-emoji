@@ -37,7 +37,7 @@ def calculate_idf_scores(df):
     # Calculate IDF score for each word
     idf_scores = {word: np.log(len(df) / sum([word in text for text in tokenized_texts])) for word in tqdm(words, desc="Calculating IDF scores")}
 
-    np.save("idf_scores.npy", idf_scores)
+    np.save("out/idf_scores.npy", idf_scores)
 
 
 def make_w2v_embeddings(df, name, w2v_model):
@@ -62,7 +62,7 @@ def make_w2v_embeddings(df, name, w2v_model):
     if name == "train":
         calculate_idf_scores(df)
 
-    idf_scores = np.load("idf_scores.npy", allow_pickle=True).item()
+    idf_scores = np.load("out/idf_scores.npy", allow_pickle=True).item()
 
     for row in tqdm(df.itertuples(), total=len(df), desc=name):
 
