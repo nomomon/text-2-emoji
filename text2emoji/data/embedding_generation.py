@@ -6,10 +6,31 @@ import gc
 
 
 def invalid_text_vec(v_size):
+    """
+    Create an invalid text vector.
+
+    Args:
+        v_size (int): The size of the vector.
+
+    Returns:
+        A numpy array of zeros.
+    """
+
     return np.zeros(v_size, dtype=np.float32)
 
 
 def make_w2v_embeddings(df, name, w2v_model):
+    """
+    Create word2vec embeddings for the given dataframe.
+
+    Args:
+        df (DataFrame): The dataframe which contains all the tweets.
+        name (string): The name of the dataframe.
+        w2v_model: Word2Vec model obtained from gensim.
+
+    Returns:
+        _type_: _description_
+    """
 
     features = []
     v_size = w2v_model.vector_size
@@ -47,6 +68,18 @@ def make_w2v_embeddings(df, name, w2v_model):
 
 
 def get_tweet_embeddings_mobert(tweets, tokenizer, model):
+    """
+    Get the embeddings of the given tweets using the mobilebert model.
+    Helper function for make_mobert_embeddings.
+
+    Args:
+        tweets (list): The tweets to get the embeddings of.
+        tokenizer: The tokenizer of mobilebert
+        model: The mobilebert model
+
+    Returns:
+        list: The embeddings of the tweets.
+    """
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
@@ -79,6 +112,18 @@ def get_tweet_embeddings_mobert(tweets, tokenizer, model):
 
 
 def make_mobert_embeddings(df, name, tokenizer, model):
+    """
+    Create mobilebert embeddings for the given dataframe.
+
+    Args:
+        df (DataFrame): The dataframe which contains all the tweets.
+        name (string): The name of the dataframe.
+        tokenizer: Mobilebert tokenizer.
+        model: Mobilebert model.
+
+    Returns:
+        DataFrame: The dataframe with the embeddings.
+    """
 
     tweets = df.text.values.tolist()
 
