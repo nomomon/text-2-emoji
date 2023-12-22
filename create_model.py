@@ -21,6 +21,7 @@ def find_best_model(model_type):
     grid_search_model.plot_loss_curve()
     grid_search_model.save_results()
 
+
 if __name__ == "__main__":
     model_type = "word2vec"
     find_best_model(model_type)
