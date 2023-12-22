@@ -66,13 +66,31 @@ def get_optimizer(model, optimizer_type, learning_rate):
 
     return optimizer
 
+def get_probabilities(model, features):
+    """
+    Get the predictions of a model, assuming the model is already on the GPU
+
+    Args:
+        model (torch.nn.Sequential): The model to get the validation accuracy of
+        valid_features (np.array): The validation features
+        valid_target (np.array): The validation target labels
+
+    Returns:
+        predictions (np.array): The probability predictions of the model
+    """
+
+    # Run model
+    logits = model(features)
+    probs = torch.nn.functional.softmax(logits, dim=1)
+    
+    return probs.to("cpu").detach().numpy()
 
 def get_performance(model, features, target):
     """
     Get the validation accuracy of a model, assuming the model is already on the GPU
 
     Args:
-        model (torch.nn.Sequential): The model to get the validation accuracy of
+        model (torch.nn.Sequential): The model to evaluate
         valid_features (np.array): The validation features
         valid_target (np.array): The validation target labels
 
@@ -81,13 +99,13 @@ def get_performance(model, features, target):
     """
 
     # Evaluate model
-    predictions = model(features)
-    softmax_predictions = torch.nn.functional.softmax(predictions, dim=1)
-    correct_predictions = softmax_predictions.argmax(dim=1) == target
-    accuracy = correct_predictions.float().mean().item()
+    logits = model(features)
+    probs = torch.nn.functional.softmax(logits, dim=1)
+    preds = probs.argmax(dim=1) == target
+    accuracy = preds.float().mean().item()
 
     # Get loss
-    loss = torch.nn.functional.cross_entropy(predictions, target).item()
+    loss = torch.nn.functional.cross_entropy(logits, target).item()
 
     return accuracy, loss
 
