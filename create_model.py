@@ -1,5 +1,5 @@
 from text2emoji.models.grid_search_model import GridSearchModel
-from text2emoji.models.test_model import test_best_model
+from text2emoji.models.test_model import eval_best_model
 
 
 def find_best_model(model_type):
@@ -21,8 +21,7 @@ def find_best_model(model_type):
     grid_search_model.plot_loss_curve()
     grid_search_model.save_results()
 
-
 if __name__ == "__main__":
     model_type = "word2vec"
     find_best_model(model_type)
-    test_best_model(model_type)
+    eval_best_model(model_type, "valid")
