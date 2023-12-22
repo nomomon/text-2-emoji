@@ -3,11 +3,11 @@ import numpy as np
 def calculate_delta(a, b):
     return np.mean(a) - np.mean(b)
 
-def bootstrap(model_pred_1, model_pred_2, y_true, num_samples=1000):
+def bootstrap(model_pred, other_pred, y_true, num_samples=1000):
     # Calculate observed delta
     observed_delta = calculate_delta(
-        model_pred_1 == y_true, 
-        model_pred_2 == y_true
+        model_pred == y_true, 
+        other_pred == y_true
     )
     
     # Initialize variables
@@ -20,13 +20,13 @@ def bootstrap(model_pred_1, model_pred_2, y_true, num_samples=1000):
         # Draw a bootstrap sample
         indices = np.random.choice(n, size=n, replace=True)
         y_true_sample = y_true[indices]
-        model_pred_1_sample = model_pred_1[indices]
-        model_pred_2_sample = model_pred_2[indices]
+        model_pred_sample = model_pred[indices]
+        other_pred_sample = other_pred[indices]
 
         # Calculate delta_i
         delta_i = calculate_delta(
-            model_pred_1_sample == y_true_sample, 
-            model_pred_2_sample == y_true_sample
+            model_pred_sample == y_true_sample, 
+            other_pred_sample == y_true_sample
         )
         
         # Check if delta_i is greater than or equal to 2 * observed_delta
