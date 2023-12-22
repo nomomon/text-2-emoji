@@ -8,6 +8,17 @@ from text2emoji.data.embedding_generation import make_w2v_embeddings, make_mober
 
 
 def make_sentence_embeddings(encoder_type="word2vec"):
+    """
+    Create sentence embeddings for the given dataframe using word2vec or mobert.
+
+    Args:
+        encoder_type (str, optional):
+        The technique to use for embedding generation. Defaults to "word2vec".
+
+    Raises:
+        ValueError: An invalid encoder type was given.
+    """
+
     train = pd.read_csv('./data/silver/train.csv')
     valid = pd.read_csv('./data/silver/valid.csv')
     test = pd.read_csv('./data/silver/test.csv')
@@ -18,15 +29,14 @@ def make_sentence_embeddings(encoder_type="word2vec"):
     elif encoder_type == "mobert":
         tokenizer = AutoTokenizer.from_pretrained('google/mobilebert-uncased')
         model = AutoModel.from_pretrained('google/mobilebert-uncased')
-        v_size = 512  # TODO: get this from the model
+        v_size = 512
     else:
         raise ValueError("Invalid encoder type")
 
     n_invalid_texts = 0
     n_only_unknown_words = 0
 
-    # Remember to add test to this list later
-    for df, name in [(train, "train"), (valid, "valid")]:
+    for df, name in [(train, "train"), (valid, "valid"), (test, "test")]:
 
         target = df.label.values
 
