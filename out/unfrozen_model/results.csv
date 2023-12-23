@@ -1,0 +1,2 @@
+learning_rate,val_accuracy,val_loss,train_accuracy,train_loss
+5e-05,0.3522,2.219774031639099,0.4156888888888889,1.9381626407531174

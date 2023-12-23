@@ -3,6 +3,7 @@ from text2emoji.models.eval_model import eval_best_model
 
 
 def find_best_model(model_type):
+
     hyperparameters = {
         "dimensionality_reduction": ["none"],
         "n_dimensions": [1],
