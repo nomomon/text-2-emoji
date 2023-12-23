@@ -1,3 +1,5 @@
+> This project is for the Machine Learning Practical ([WBAI060-05](https://ocasys.rug.nl/current/catalog/course/WBAI060-05)) course, as such we cannot accept outside contibutions at the moment.
+
 # NLP Wizards: Emoji Prediction
 
 In this project, we will be predicting the emoji for a given tweet. Our current approach uses a neural network classifier which is trained on the word2vec sentence embeddings of the tweets.
@@ -32,3 +34,9 @@ python create_model.py
 ```
 
 We will be consolidating all the commands into a single file in the future.
+
+## Authors
+
+- Mansur Nurmukhambetov
+- Jeremias Lino Ferrao
+- Juriën Michèl Schut
