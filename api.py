@@ -7,8 +7,11 @@ from typing import List
 from pydantic import BaseModel
 
 from text2emoji.data.text_processing import preprocess_text
-from text2emoji.data.embedding_generation import make_w2v_embeddings
+from text2emoji.data.embedding_generation import make_w2v_embeddings, make_mobert_embeddings
 from text2emoji.models.nn_classifier import get_probabilities
+from create_embedding import load_embedding_model
+
+EMBEDDING_TYPE = "word2vec"
 
 
 class EmojiPrediction(BaseModel):
@@ -23,6 +26,15 @@ class QueryResponse(BaseModel):
 
 
 app = FastAPI()
+
+# Load the model and tokenizer. We can ignore the v_size as we don't need it for prediction.
+embedding_model, _, tokenizer = load_embedding_model(EMBEDDING_TYPE)
+
+# Classifier layer to be used for prediction
+# The layers differ for each embedding type
+classifier = torch.load(f'out/{EMBEDDING_TYPE}/best_model.pt')
+device = "cuda" if torch.cuda.is_available() else "cpu"
+classifier.to(device)
 
 
 @app.get("/")
@@ -61,13 +73,13 @@ def get_emoji_probs(text: str):
     # convert into a pandas dataframe with one row and the text column
     df = pd.DataFrame({'text': [cleaned_text]})
 
-    # We should ideally load this before hand
-    w2v_model = w2v_api.load("word2vec-google-news-300")
-    embeddings, _, _ = make_w2v_embeddings(df, "Production", w2v_model)
+    # Generate embeddings for the text
+    name = "production"
+    if EMBEDDING_TYPE == "word2vec":
+        embeddings, _, _ = make_w2v_embeddings(df, name, embedding_model)
 
-    classifier = torch.load('out/best_model.pt')
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    classifier.to(device)
+    elif EMBEDDING_TYPE == "mobert":
+        embeddings = make_mobert_embeddings(df, name, tokenizer, embedding_model)
 
     embeddings = torch.tensor(embeddings).float().to(device)
     probabilites = get_probabilities(classifier, embeddings)
@@ -78,3 +90,4 @@ def get_emoji_probs(text: str):
 if __name__ == "__main__":
     text = input("Enter text: ")
     output = get_emoji_probs(text)
+    print(output)
