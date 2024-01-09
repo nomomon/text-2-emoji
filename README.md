@@ -8,7 +8,7 @@ In this project, we will be predicting the emoji for a given tweet. Our current 
 
 To install all the dependencies, run the following command using pipenv:
 
-```{bash}
+```bash
 pipenv install
 ```
 
@@ -26,7 +26,7 @@ We currently have 3 main files in the project:
 
 To run the project, you can use the following commands:
 
-```{bash}
+```bash
 pipenv shell
 python preprocess_dataset.py
 python create_embedding.py
@@ -34,6 +34,17 @@ python create_model.py
 ```
 
 We will be consolidating all the commands into a single file in the future.
+
+## Starting the api
+
+To start the api, you can use the following command:
+
+```bash
+uvicorn api:app --reload
+```
+
+You can access the Swagger Documentation at `http://127.0.0.1:8000/docs` and the API at `http://127.0.0.1:8000/get_emoji?text=...`.
+
 
 ## Authors
 
