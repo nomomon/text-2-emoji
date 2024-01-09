@@ -66,6 +66,7 @@ def get_optimizer(model, optimizer_type, learning_rate):
 
     return optimizer
 
+
 def get_probabilities(model, features):
     """
     Get the predictions of a model, assuming the model is already on the GPU
@@ -82,8 +83,9 @@ def get_probabilities(model, features):
     # Run model
     logits = model(features)
     probs = torch.nn.functional.softmax(logits, dim=1)
-    
+
     return probs.to("cpu").detach().numpy()
+
 
 def get_performance(model, features, target):
     """
