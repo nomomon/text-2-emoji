@@ -205,8 +205,6 @@ def remove_contractions(text):
         "cannot": "can not",
         "youre": "you are",
         "loveu": "love you",
-        " im": "i am",
-        " ill": "i will",
         "cuz": "because",
         "wanna": "want to",
         "gonna": "going to",
