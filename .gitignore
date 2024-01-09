@@ -3,3 +3,8 @@ Pipfile.lock
 __pycache__/
 .DS_Store
 .vscode/
+
+.pt
+.npy
+.safetensors
+data/gold/*
