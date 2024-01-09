@@ -21,6 +21,8 @@ umap-learn = "*"
 transformers = "*"
 scikit-learn = "*"
 pre-commit = "*"
+fastapi = "*"
+uvicorn = "*"
 
 [dev-packages]
 
