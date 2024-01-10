@@ -32,6 +32,8 @@ class GridSearchModel:
         Initialize the model, load data and create results dataframe
         """
 
+        self.embedding_type = embedding_type
+
         # Load data
         self.train_features = np.load(f"data/gold/train_{embedding_type}_features.npy")
         self.valid_features = np.load(f"data/gold/valid_{embedding_type}_features.npy")
@@ -251,13 +253,13 @@ class GridSearchModel:
 
         # Save best model
         best_model = self.get_best_hyperparameters()["model"]
-        torch.save(best_model, "out/best_model.pt")
+        torch.save(best_model, f"out/{self.embedding_type}/best_model.pt")
 
         # Save losses of best model
         training_losses = self.get_best_hyperparameters()["training_losses"]
         valid_losses = self.get_best_hyperparameters()["valid_losses"]
-        np.save("out/training_losses.npy", training_losses)
-        np.save("out/valid_losses.npy", valid_losses)
+        np.save(f"out/{self.embedding_type}/training_losses.npy", training_losses)
+        np.save(f"out/{self.embedding_type}/valid_losses.npy", valid_losses)
 
         # Remove models and losses from results
         self.results.drop("model", axis=1, inplace=True)
@@ -265,4 +267,4 @@ class GridSearchModel:
         self.results.drop("valid_losses", axis=1, inplace=True)
 
         # Save results
-        self.results.to_csv("out/grid_search_results.csv", index=False)
+        self.results.to_csv(f"out/{self.embedding_type}/grid_search_results.csv", index=False)

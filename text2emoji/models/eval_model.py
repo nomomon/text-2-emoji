@@ -22,7 +22,7 @@ def eval_best_model(type, eval_set="valid"):
     eval_labels = np.load(f"data/gold/{eval_set}_{type}_target.npy")
 
     # Load the number of dimensions and technique used for dimensionality reduction
-    df = pd.read_csv("out/grid_search_results.csv")
+    df = pd.read_csv(f"out/{type}/grid_search_results.csv")
 
     # dimensionality_reduction ,n_dimensions, get these fields from the df
     reduction_technique = df["dimensionality_reduction"].iloc[0]
