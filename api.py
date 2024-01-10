@@ -1,5 +1,4 @@
 import pandas as pd
-import gensim.downloader as w2v_api
 import torch
 from fastapi import FastAPI
 
@@ -67,6 +66,9 @@ def get_emoji_probs(text: str):
     Returns:
         list: The list of probabilities for each emoji.
     """
+
+    # Replace %20 with spaces
+    text = text.replace("%20", " ")
 
     cleaned_text = preprocess_text(text)
 
