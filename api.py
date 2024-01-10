@@ -21,6 +21,7 @@ class EmojiPrediction(BaseModel):
 
 
 class QueryResponse(BaseModel):
+    query: str
     results: List[EmojiPrediction]
 
 
@@ -31,9 +32,8 @@ embedding_model, _, tokenizer = load_embedding_model(EMBEDDING_TYPE)
 
 # Classifier layer to be used for prediction
 # The layers differ for each embedding type
-classifier = torch.load(f'out/{EMBEDDING_TYPE}/best_model.pt')
-device = "cuda" if torch.cuda.is_available() else "cpu"
-classifier.to(device)
+device = "cpu"
+classifier = torch.load(f'out/{EMBEDDING_TYPE}/best_model.pt', map_location=device)
 
 
 @app.get("/")
@@ -53,7 +53,10 @@ async def get_emoji(text: str) -> QueryResponse:
     labels["probability"] = probs
     labels = labels.sort_values(by="probability", ascending=False)
 
-    return QueryResponse(results=labels.to_dict(orient="records"))
+    return QueryResponse(
+        query=text,
+        results=labels.to_dict(orient="records")
+    )
 
 
 def get_emoji_probs(text: str):
