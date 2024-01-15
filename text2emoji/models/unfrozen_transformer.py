@@ -1,9 +1,15 @@
 import torch
 import transformers
+import gc
+
+import numpy as np
 
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from tqdm import tqdm
+
+# Number of epochs to train for, we expect the model to converge very quickly
+MAX_EPOCHS = 5
 
 
 class CustomDataset(Dataset):
@@ -87,3 +93,82 @@ def set_up_model(model_name, learning_rate, dropout):
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
     return model, optimizer
+
+
+def process_batch(model, device, batch):
+    input_ids = batch['input_ids'].to(device)
+    attention_mask = batch['attention_mask'].to(device)
+    labels = batch['label'].to(device)
+    outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
+
+    loss = outputs.loss
+    logits = outputs.logits
+    preds = torch.argmax(logits, dim=1)
+    correct_predictions = torch.sum(preds == labels)
+
+    return loss, correct_predictions, len(input_ids)
+
+
+def calculate_metric_over_batches(correct_predictions, total_examples, losses):
+    accuracy = (correct_predictions.double() / total_examples).item()
+    average_loss = sum(losses) / len(losses)
+    return accuracy, average_loss
+
+
+def train_epoch(model, device, train_loader, optimizer):
+    model.train()
+    losses = []
+    correct_predictions = 0
+    for batch in tqdm(train_loader, desc="Training", unit="batch"):
+        loss, correct, num_examples = process_batch(model, device, batch)
+        correct_predictions += correct
+        losses.append(loss.item())
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        # Free up GPU memory
+        del batch
+        torch.cuda.empty_cache()
+        gc.collect()
+
+    return calculate_metric_over_batches(correct_predictions, len(train_loader.dataset), losses)
+
+
+def eval_epoch(model, device, val_loader):
+    model.eval()
+    losses = []
+    correct_predictions = 0
+    with torch.no_grad():
+        for batch in tqdm(val_loader, desc="Validation", unit="batch"):
+            loss, correct, num_examples = process_batch(model, device, batch)
+            correct_predictions += correct
+            losses.append(loss.item())
+
+    return calculate_metric_over_batches(correct_predictions, len(val_loader.dataset), losses)
+
+
+def train_model(model, optimizer, train_loader, valid_loader):
+
+    training_losses, validation_losses = [], []
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    for epoch in tqdm(range(MAX_EPOCHS)):
+
+        train_accuracy, train_loss = train_epoch(model, device, train_loader, optimizer)
+
+        # Get the validation accuracy and loss
+        valid_accuracy, valid_loss = eval_epoch(model, device, valid_loader)
+
+        # Use early stopping, if val accuracy does not improve from earlier epoch, stop training
+        if epoch > 1 and valid_loss > max(validation_losses[-1:]):
+            break
+
+        training_losses.append(train_loss)
+        validation_losses.append(valid_loss)
+
+    # Convert to numpy arrays
+    training_losses = np.array(training_losses)
+    validation_losses = np.array(validation_losses)
+
+    return valid_accuracy, valid_loss, train_accuracy, train_loss, training_losses, validation_losses

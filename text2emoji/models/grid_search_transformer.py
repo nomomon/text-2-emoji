@@ -1,7 +1,7 @@
 import pandas as pd
 
 from text2emoji.models.grid_search_model import GridSearchModel, create_results_df, print_baseline_metrics, create_hyperparameter_combinations
-from text2emoji.models.unfrozen_transformer import set_up_model, get_tokenizer, create_data_loader
+from text2emoji.models.unfrozen_transformer import set_up_model, get_tokenizer, create_data_loader, train_model
 
 MAX_SEQ_LEN = 100
 BATCH_SIZE = 128
@@ -68,3 +68,33 @@ class TransformerGridSearch(GridSearchModel):
             learning_rate, dropout = hyperparameter_combination
 
             model, optimizer = set_up_model(self.model_name, learning_rate, dropout)
+
+            # Train model
+            (
+                valid_accuracy,
+                valid_loss,
+                train_accuracy,
+                train_loss,
+                training_losses,
+                validation_losses,
+            ) = train_model(
+                model,
+                optimizer,
+                train_loader,
+                valid_loader,
+            )
+
+            # Save results
+            self.add_result(
+                hyperparameter_combination,
+                valid_accuracy,
+                valid_loss,
+                train_accuracy,
+                train_loss,
+                training_losses,
+                validation_losses,
+                model,
+            )
+
+        # Save results to csv
+        self.results.sort_values("valid_loss", ascending=True, inplace=True)
