@@ -31,7 +31,7 @@ def make_df_from_raw(name="train", path="data/raw/"):
     return df
 
 
-def clean_text():
+def clean_text(processing_type='full'):
     print('Installing nltk...')
     nltk.download('punkt')
     nltk.download('stopwords')
@@ -55,17 +55,26 @@ def clean_text():
 
     for df, name in [(train, "train"), (valid, "valid"), (test, "test")]:
         for row in tqdm(df.itertuples(), total=len(df), desc=name):
-            df.at[row.Index, 'text'] = preprocess_text(row.text)
+            df.at[row.Index, 'text'] = preprocess_text(row.text, processing_type)
 
-    train.to_csv('./data/silver/train.csv', index=False)
-    valid.to_csv('./data/silver/valid.csv', index=False)
-    test.to_csv('./data/silver/test.csv', index=False)
+    # Added step for backwards compatibility
+    filename = "unfrozen_transformer_" if processing_type == 'transformer' else ""
+
+    train.to_csv(f'./data/silver/{filename}train.csv', index=False)
+    valid.to_csv(f'./data/silver/{filename}valid.csv', index=False)
+    test.to_csv(f'./data/silver/{filename}test.csv', index=False)
 
 
 if __name__ == '__main__':
 
-    clean_text()
+    # These are the types of embeddings we can use
+    # In the case of transformer, we skip the embedding generation step
+    TYPES = ['word2vec', 'mobert', 'transformer']
 
-    make_sentence_embeddings()
+    # Set the amount of processing to do
+    processing_type = 'transformer'
+
+    clean_text(processing_type)
+    make_sentence_embeddings(processing_type)
 
     print('Finished preprocessing data.')

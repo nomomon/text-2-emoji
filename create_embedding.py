@@ -49,6 +49,10 @@ def make_sentence_embeddings(encoder_type="word2vec"):
         ValueError: An invalid encoder type was given.
     """
 
+    if encoder_type == 'transformer':
+        print("Skipping embedding generation for transformer")
+        return
+
     train = pd.read_csv('./data/silver/train.csv')
     valid = pd.read_csv('./data/silver/valid.csv')
     test = pd.read_csv('./data/silver/test.csv')

@@ -68,7 +68,7 @@ def lemmatize_text(text):
     return text
 
 
-def preprocess_text(text):
+def preprocess_text(text, type='full'):
     """
         Preprocess text by cleaning, removing stopwords and lemmatizing
 
@@ -86,6 +86,10 @@ def preprocess_text(text):
 
     # Clean text
     text = clean_text(text)
+
+    # If we are using a transformer model, we don't need further preprocessing
+    if type != 'full':
+        return text
 
     # Remove stopwords
     text = remove_stopwords(text)
