@@ -37,6 +37,20 @@ def print_baseline_metrics(train_target, valid_target):
     print(f"Baseline validation accuracy: {baseline_accuracy}")
 
 
+def create_hyperparameter_combinations(hyperparameters, verbose):
+    # Create all combinations of hyperparameters
+    hyperparameter_combinations = list(
+        itertools.product(*hyperparameters.values())
+    )
+
+    if verbose:
+        hyperparameter_combinations = tqdm(
+            hyperparameter_combinations, desc="Hyperparameter search"
+        )
+
+    return hyperparameter_combinations
+
+
 class GridSearchModel:
     """
     A model that performs a grid search over a set of hyperparameters using a neural network
@@ -59,7 +73,7 @@ class GridSearchModel:
         Initialize the model, load data and create results dataframe
         """
 
-        self.embedding_type = embedding_type
+        self.model_type = embedding_type
 
         # Load data
         self.train_features = np.load(f"data/gold/train_{embedding_type}_features.npy")
@@ -155,14 +169,9 @@ class GridSearchModel:
         """
 
         # Create all combinations of hyperparameters
-        hyperparameter_combinations = list(
-            itertools.product(*self.hyperparameters.values())
+        hyperparameter_combinations = create_hyperparameter_combinations(
+            self.hyperparameters, verbose
         )
-
-        if verbose:
-            hyperparameter_combinations = tqdm(
-                hyperparameter_combinations, desc="Hyperparameter search"
-            )
 
         # Iterate over all combinations
         for hyperparameter_combination in hyperparameter_combinations:
@@ -263,13 +272,13 @@ class GridSearchModel:
 
         # Save best model
         best_model = self.get_best_hyperparameters()["model"]
-        torch.save(best_model, f"out/{self.embedding_type}/best_model.pt")
+        torch.save(best_model, f"out/{self.model_type}/best_model.pt")
 
         # Save losses of best model
         training_losses = self.get_best_hyperparameters()["training_losses"]
         valid_losses = self.get_best_hyperparameters()["valid_losses"]
-        np.save(f"out/{self.embedding_type}/training_losses.npy", training_losses)
-        np.save(f"out/{self.embedding_type}/valid_losses.npy", valid_losses)
+        np.save(f"out/{self.model_type}/training_losses.npy", training_losses)
+        np.save(f"out/{self.model_type}/valid_losses.npy", valid_losses)
 
         # Remove models and losses from results
         self.results.drop("model", axis=1, inplace=True)
@@ -277,4 +286,4 @@ class GridSearchModel:
         self.results.drop("valid_losses", axis=1, inplace=True)
 
         # Save results
-        self.results.to_csv(f"out/{self.embedding_type}/grid_search_results.csv", index=False)
+        self.results.to_csv(f"out/{self.model_type}/grid_search_results.csv", index=False)

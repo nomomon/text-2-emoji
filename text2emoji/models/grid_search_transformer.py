@@ -1,6 +1,10 @@
 import pandas as pd
 
-from text2emoji.models.grid_search_model import GridSearchModel, create_results_df, print_baseline_metrics
+from text2emoji.models.grid_search_model import GridSearchModel, create_results_df, print_baseline_metrics, create_hyperparameter_combinations
+from text2emoji.models.unfrozen_transformer import set_up_model, get_tokenizer, create_data_loader
+
+MAX_SEQ_LEN = 100
+BATCH_SIZE = 128
 
 
 class TransformerGridSearch(GridSearchModel):
@@ -13,14 +17,21 @@ class TransformerGridSearch(GridSearchModel):
         "dropout"
     ]
 
-    def __init__(self, hyperparameters, embedding_type):
+    def __init__(self, hyperparameters, model_type):
         """
         Initialize the model, load data and create results dataframe
         """
 
-        self.embedding_type = embedding_type
+        self.model_type = model_type
 
-        path = "unfrozen_transformer"
+        if self.model_type == "bert":
+            self.model_name = "bert-base-uncased"
+        else:
+            raise ValueError("Unknown model type")
+
+        self.hyperparameters = hyperparameters
+
+        path = f"unfrozen_{self.model_type}"
         train_data = pd.read_csv(f'./data/silver/{path}_train.csv')
         valid_data = pd.read_csv(f'./data/silver/{path}_valid.csv')
 
@@ -37,3 +48,23 @@ class TransformerGridSearch(GridSearchModel):
         print_baseline_metrics(self.train_target, self.valid_target)
 
         assert set(self.hyperparameters.keys()) == set(self.hyperparameters_keys)
+
+    def run(self, verbose=True):
+        """
+        Run the grid search
+        """
+
+        # Create all combinations of hyperparameters
+        hyperparameter_combinations = create_hyperparameter_combinations(self.hyperparameters, verbose)
+
+        tokenizer = get_tokenizer(self.model_name)
+        train_loader = create_data_loader(self.train_features, self.train_target, tokenizer, MAX_SEQ_LEN, BATCH_SIZE)
+        valid_loader = create_data_loader(self.valid_features, self.valid_target, tokenizer, MAX_SEQ_LEN, BATCH_SIZE)
+
+        # Iterate over all combinations
+        for hyperparameter_combination in hyperparameter_combinations:
+
+            # Unpack hyperparameters
+            learning_rate, dropout = hyperparameter_combination
+
+            model, optimizer = set_up_model(self.model_name, learning_rate, dropout)
