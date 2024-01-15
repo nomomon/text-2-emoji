@@ -24,14 +24,14 @@ class TransformerGridSearch(GridSearchModel):
 
         self.model_type = model_type
 
-        if self.model_type == "bert":
+        if self.model_type == "unfrozen_bert":
             self.model_name = "bert-base-uncased"
         else:
             raise ValueError("Unknown model type")
 
         self.hyperparameters = hyperparameters
 
-        path = f"unfrozen_{self.model_type}"
+        path = "unfrozen_transformer"
         train_data = pd.read_csv(f'./data/silver/{path}_train.csv')
         valid_data = pd.read_csv(f'./data/silver/{path}_valid.csv')
 

@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
 from sklearn.preprocessing import normalize
+import torch
 
 from text2emoji.data.embedding_generation import make_w2v_embeddings, make_mobert_embeddings
 
@@ -31,6 +32,10 @@ def load_embedding_model(encoder_type):
         tokenizer = AutoTokenizer.from_pretrained('google/mobilebert-uncased')
         model = AutoModel.from_pretrained('google/mobilebert-uncased')
         v_size = 512
+    elif encoder_type == 'unfrozen_bert':
+        tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+        model = torch.load('out/unfrozen_bert/best_model.pt')
+        v_size = 768
     else:
         raise ValueError("Invalid encoder type")
 

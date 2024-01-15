@@ -6,10 +6,11 @@ import numpy as np
 
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
+from torch.nn.functional import softmax
 from tqdm import tqdm
 
-# Number of epochs to train for, we expect the model to converge very quickly
-MAX_EPOCHS = 5
+# Number of epochs to train for, we expect the model to converge very quickly before this
+MAX_EPOCHS = 10
 
 
 class CustomDataset(Dataset):
@@ -44,10 +45,10 @@ class CustomDataset(Dataset):
         }
 
 
-def create_data_loader(df, tokenizer, max_len, batch_size):
+def create_data_loader(features, labels, tokenizer, max_len, batch_size):
     ds = CustomDataset(
-        text=df.text.to_numpy(),
-        label=df.label.to_numpy(),
+        text=features,
+        label=labels,
         tokenizer=tokenizer,
         max_len=max_len
     )
@@ -115,6 +116,13 @@ def calculate_metric_over_batches(correct_predictions, total_examples, losses):
     return accuracy, average_loss
 
 
+def get_all_class_probabilities(text, model, tokenizer):
+    inputs = tokenizer.encode_plus(text, return_tensors='pt')
+    outputs = model(**inputs)
+    probabilities = softmax(outputs[0], dim=1).tolist()[0]  # Apply softmax to get probabilities
+    return probabilities
+
+
 def train_epoch(model, device, train_loader, optimizer):
     model.train()
     losses = []
@@ -152,6 +160,7 @@ def train_model(model, optimizer, train_loader, valid_loader):
 
     training_losses, validation_losses = [], []
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
     for epoch in tqdm(range(MAX_EPOCHS)):
 

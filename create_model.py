@@ -21,9 +21,10 @@ def classifier_model(model_type):
 
 def transformer_model(model_type):
 
+    # Be careful with too many hyperparameters as there might not be enough memory
     hyperparameters = {
         "learning_rate": [1e-5, 2e-5, 5e-5],
-        "dropout": [0.1, 0.3, 0.5],
+        "dropout": [0.1, 0.3],
     }
 
     return TransformerGridSearch(hyperparameters, model_type)
@@ -42,7 +43,11 @@ def find_best_model(model_type):
     model.save_results()
 
 
+# Supported model types
+MODEL_TYPES = ["word2vec", "mobert", "unfrozen_bert"]
+
 if __name__ == "__main__":
-    model_type = "bert"
+
+    model_type = "unfrozen_bert"
     find_best_model(model_type)
     # eval_best_model(model_type, "valid")
