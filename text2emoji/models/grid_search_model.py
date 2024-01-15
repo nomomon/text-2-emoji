@@ -10,6 +10,33 @@ from text2emoji.features.embedding_processing import balance_data, reduce_dimens
 from text2emoji.models.nn_classifier import get_model, get_optimizer, train_model
 
 
+def create_results_df(hyperparameters_keys):
+    results = pd.DataFrame(
+        columns=hyperparameters_keys
+        + [
+            "valid_accuracy",
+            "valid_loss",
+            "train_accuracy",
+            "train_loss",
+            "training_losses",
+            "valid_losses",
+            "model",
+        ]
+    )
+    return results
+
+
+def print_baseline_metrics(train_target, valid_target):
+    # Print the most frequent label
+    unique_labels, counts = np.unique(train_target, return_counts=True)
+    most_frequent_label = unique_labels[np.argmax(counts)]
+    print(f"Most frequent label: {most_frequent_label}")
+
+    # Print the accuracy of a model that always predicts the most frequent label
+    baseline_accuracy = (valid_target == most_frequent_label).mean()
+    print(f"Baseline validation accuracy: {baseline_accuracy}")
+
+
 class GridSearchModel:
     """
     A model that performs a grid search over a set of hyperparameters using a neural network
@@ -41,31 +68,14 @@ class GridSearchModel:
         self.valid_target = np.load(f"data/gold/valid_{embedding_type}_target.npy")
 
         # Create results dataframe
-        self.results = pd.DataFrame(
-            columns=self.hyperparameters_keys
-            + [
-                "valid_accuracy",
-                "valid_loss",
-                "train_accuracy",
-                "train_loss",
-                "training_losses",
-                "valid_losses",
-                "model",
-            ]
-        )
+        self.results = create_results_df(self.hyperparameters_keys)
 
         # Print number of rows
         print(f"Number of rows in training data: {len(self.train_features)}")
         print(f"Number of rows in validation data: {len(self.valid_features)}")
 
-        # Print the most frequent label
-        unique_labels, counts = np.unique(self.train_target, return_counts=True)
-        most_frequent_label = unique_labels[np.argmax(counts)]
-        print(f"Most frequent label: {most_frequent_label}")
-
-        # Print the accuracy of a model that always predicts the most frequent label
-        baseline_accuracy = (self.valid_target == most_frequent_label).mean()
-        print(f"Baseline validation accuracy: {baseline_accuracy}")
+        # Print baseline metrics
+        print_baseline_metrics(self.train_target, self.valid_target)
 
         self.hyperparameters = hyperparameters
         self.current_dimensions_reduction = None

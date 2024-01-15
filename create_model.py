@@ -1,8 +1,9 @@
 from text2emoji.models.grid_search_model import GridSearchModel
+from text2emoji.models.grid_search_transformer import TransformerGridSearch
 from text2emoji.models.eval_model import eval_best_model
 
 
-def find_best_model(model_type):
+def classifier_model(model_type):
 
     hyperparameters = {
         "dimensionality_reduction": ["none"],
@@ -15,15 +16,33 @@ def find_best_model(model_type):
         "epochs": [80, 100, 125, 150, 175, 200],
     }
 
-    grid_search_model = GridSearchModel(hyperparameters, model_type)
-    grid_search_model.run()
-    print(grid_search_model.get_best_hyperparameters())
+    return GridSearchModel(hyperparameters, model_type)
 
-    grid_search_model.plot_loss_curve()
-    grid_search_model.save_results()
+
+def transformer_model(model_type):
+
+    hyperparameters = {
+        "learning_rate": [1e-5, 2e-5, 5e-5],
+        "dropout": [0.1, 0.3, 0.5],
+    }
+
+    return TransformerGridSearch(hyperparameters, model_type)
+
+
+def find_best_model(model_type):
+
+    if model_type in ["word2vec", "mobert"]:
+        model = classifier_model(model_type)
+    else:
+        model = transformer_model(model_type)
+
+    model.run()
+    print(model.get_best_hyperparameters())
+    model.plot_loss_curve()
+    model.save_results()
 
 
 if __name__ == "__main__":
-    model_type = "word2vec"
+    model_type = "bert"
     find_best_model(model_type)
     # eval_best_model(model_type, "valid")
