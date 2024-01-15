@@ -6,8 +6,8 @@ from imblearn.over_sampling import RandomOverSampler
 
 def balance_data(features, target, balance_technique, n_samples=None):
     """
-    Balance a dataset by taking
-    # TODO: add description
+    Balance a dataset by either undersampling or oversampling the majority class\
+    If no technique is specified, the dataset is not balanced
 
     Args:
         features (np.array): The features

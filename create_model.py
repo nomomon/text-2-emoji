@@ -4,6 +4,15 @@ from text2emoji.models.eval_model import eval_best_model
 
 
 def classifier_model(model_type):
+    """
+    Trains a classifier model which operates on the embeddings.
+
+    Args:
+        model_type (string): The type of classifier model to train.
+
+    Returns:
+        GridSearchModel: A grid search model.
+    """
 
     hyperparameters = {
         "dimensionality_reduction": ["none"],
@@ -20,6 +29,15 @@ def classifier_model(model_type):
 
 
 def transformer_model(model_type):
+    """
+    Trains a transformer model which operates on the raw text.
+
+    Args:
+        model_type (string): The type of transformer model to train.
+
+    Returns:
+        TransformerGridSearch: A variant of the grid search model for transformers.
+    """
 
     # Be careful with too many hyperparameters as there might not be enough memory
     hyperparameters = {
@@ -31,6 +49,12 @@ def transformer_model(model_type):
 
 
 def find_best_model(model_type):
+    """
+    Finds the best model for the given model type.
+
+    Args:
+        model_type (string): The type of model to train.
+    """
 
     if model_type in ["word2vec", "mobert"]:
         model = classifier_model(model_type)

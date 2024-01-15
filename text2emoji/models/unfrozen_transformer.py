@@ -14,6 +14,11 @@ MAX_EPOCHS = 10
 
 
 class CustomDataset(Dataset):
+    """
+    Custom dataset class for the transformer model
+    Uses the tokenizer to encode the text
+    """
+
     def __init__(self, text, label, tokenizer, max_len):
         self.text = text
         self.label = label
@@ -46,6 +51,20 @@ class CustomDataset(Dataset):
 
 
 def create_data_loader(features, labels, tokenizer, max_len, batch_size):
+    """
+    Create a data loader for the given features and labels
+
+    Args:
+        features (series): The features
+        labels (series): The labels
+        tokenizer (Transformers.tokenizer): The tokenizer of the model
+        max_len (int): The maximum length of the input in tokens
+        batch_size (int): The number of samples per batch
+
+    Returns:
+        torch.utils.data.DataLoader: The data loader
+    """
+
     ds = CustomDataset(
         text=features,
         label=labels,
@@ -97,6 +116,17 @@ def set_up_model(model_name, learning_rate, dropout):
 
 
 def process_batch(model, device, batch):
+    """
+    Process a batch by using the input_ids and attention_mask to get the logits
+
+    Args:
+        model (Pytorch model): The model to use
+        device (string): The device to train on
+        batch (Dataloader batch): A batch of data obtained from the dataloader
+
+    Returns:
+        _type_: _description_
+    """
     input_ids = batch['input_ids'].to(device)
     attention_mask = batch['attention_mask'].to(device)
     labels = batch['label'].to(device)
@@ -111,12 +141,36 @@ def process_batch(model, device, batch):
 
 
 def calculate_metric_over_batches(correct_predictions, total_examples, losses):
+    """
+    Calculate the accuracy and average loss over all batches
+
+    Args:
+        correct_predictions (tensor): The number of correct predictions
+        total_examples (int): The total number of examples
+        losses (list): The list of losses
+
+    Returns:
+        float: The accuracy
+        float: The average loss
+    """
     accuracy = (correct_predictions.double() / total_examples).item()
     average_loss = sum(losses) / len(losses)
     return accuracy, average_loss
 
 
 def get_all_class_probabilities(text, model, tokenizer):
+    """
+    Get the probabilities for all classes for the given text
+
+    Args:
+        text (string): The text to get the probabilities for
+        model (Pytorch model): The model to use
+        tokenizer (Transformers.tokenizer): The tokenizer of the model
+
+    Returns:
+        list: The probabilities for all classes
+    """
+
     inputs = tokenizer.encode_plus(text, return_tensors='pt')
     outputs = model(**inputs)
     probabilities = softmax(outputs[0], dim=1).tolist()[0]  # Apply softmax to get probabilities
@@ -124,6 +178,20 @@ def get_all_class_probabilities(text, model, tokenizer):
 
 
 def train_epoch(model, device, train_loader, optimizer):
+    """
+    Train the model for one epoch
+
+    Args:
+        model (Pytorch model): The model to train
+        device (string): The device to train on
+        train_loader (Dataloader): The training data loader
+        optimizer (torch.optim): The optimizer to use
+
+    Returns:
+        float: The accuracy
+        float: The average loss
+    """
+
     model.train()
     losses = []
     correct_predictions = 0
@@ -144,6 +212,19 @@ def train_epoch(model, device, train_loader, optimizer):
 
 
 def eval_epoch(model, device, val_loader):
+    """
+    Evaluate the model for one epoch
+
+    Args:
+        model (Pytorch model): The model to evaluate
+        device (string): The device to evaluate on
+        val_loader (Dataloader): The validation data loader
+
+    Returns:
+        float: The accuracy
+        float: The average loss
+    """
+
     model.eval()
     losses = []
     correct_predictions = 0
@@ -157,6 +238,23 @@ def eval_epoch(model, device, val_loader):
 
 
 def train_model(model, optimizer, train_loader, valid_loader):
+    """
+    Train the model
+
+    Args:
+        model (Pytorch model): The model to train
+        optimizer (torch.optim): The optimizer to use
+        train_loader (Dataloader): The training data loader
+        valid_loader (Dataloader): The validation data loader
+
+    Returns:
+        float: The validation accuracy
+        float: The validation loss
+        float: The training accuracy
+        float: The training loss
+        list: The training losses
+        list: The validation losses
+    """
 
     training_losses, validation_losses = [], []
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

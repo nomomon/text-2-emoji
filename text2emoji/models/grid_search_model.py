@@ -11,6 +11,16 @@ from text2emoji.models.nn_classifier import get_model, get_optimizer, train_mode
 
 
 def create_results_df(hyperparameters_keys):
+    """
+    Create a dataframe to store the results of the grid search
+
+    Args:
+        hyperparameters_keys (list): The keys of the hyperparameters
+
+    Returns:
+        Dataframe: A dataframe to store the results of the grid search
+    """
+
     results = pd.DataFrame(
         columns=hyperparameters_keys
         + [
@@ -27,6 +37,14 @@ def create_results_df(hyperparameters_keys):
 
 
 def print_baseline_metrics(train_target, valid_target):
+    """
+    Print the most frequent label and the accuracy of a model that always predicts the most frequent label
+
+    Args:
+        train_target (Dataframe): The labels of the training data
+        valid_target (Dataframe): The labels of the validation data
+    """
+
     # Print the most frequent label
     unique_labels, counts = np.unique(train_target, return_counts=True)
     most_frequent_label = unique_labels[np.argmax(counts)]
@@ -38,6 +56,18 @@ def print_baseline_metrics(train_target, valid_target):
 
 
 def create_hyperparameter_combinations(hyperparameters, verbose):
+    """
+    Create all combinations of hyperparameters using itertools
+    Adds a tqdm progress bar if verbose is True
+
+    Args:
+        hyperparameters (list): Values for each hyperparameter
+        verbose (bool): Whether to show a progress bar
+
+    Returns:
+        Iterable: All combinations of hyperparameters with a progress bar if verbose is True
+    """
+
     # Create all combinations of hyperparameters
     hyperparameter_combinations = list(
         itertools.product(*hyperparameters.values())
