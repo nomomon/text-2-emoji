@@ -45,6 +45,13 @@ uvicorn api:app --reload
 
 You can access the Swagger Documentation at `http://127.0.0.1:8000/docs` and the API at `http://127.0.0.1:8000/get_emoji?text=...`.
 
+## Starting front-end
+
+To start the front-end, you can use the following command:
+```bash
+streamlit run streamlit_demo.py
+```
+
 ## Authors
 
 - Mansur Nurmukhambetov
