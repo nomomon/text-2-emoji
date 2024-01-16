@@ -29,7 +29,7 @@ def handle_streamlit():
 
     custom_darkcyan = ["#18191A", "darkcyan"]    # Probability background color based on its value
     custom_cmap = LinearSegmentedColormap.from_list("mycmap",custom_darkcyan)
-    df_data = df_data.style.background_gradient(axis=0, subset="probability",
+    df_data = df_data.style.background_gradient(axis=0, gmap= df_data["probability"],
                                                 vmin=0, vmax=1, cmap=custom_cmap)
     st.table(df_data)
 
