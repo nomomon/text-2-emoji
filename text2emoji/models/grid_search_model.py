@@ -10,6 +10,77 @@ from text2emoji.features.embedding_processing import balance_data, reduce_dimens
 from text2emoji.models.nn_classifier import get_model, get_optimizer, train_model
 
 
+def create_results_df(hyperparameters_keys):
+    """
+    Create a dataframe to store the results of the grid search
+
+    Args:
+        hyperparameters_keys (list): The keys of the hyperparameters
+
+    Returns:
+        Dataframe: A dataframe to store the results of the grid search
+    """
+
+    results = pd.DataFrame(
+        columns=hyperparameters_keys
+        + [
+            "valid_accuracy",
+            "valid_loss",
+            "train_accuracy",
+            "train_loss",
+            "training_losses",
+            "valid_losses",
+            "model",
+        ]
+    )
+    return results
+
+
+def print_baseline_metrics(train_target, valid_target):
+    """
+    Print the most frequent label and the accuracy of a model that always predicts the most frequent label
+
+    Args:
+        train_target (Dataframe): The labels of the training data
+        valid_target (Dataframe): The labels of the validation data
+    """
+
+    # Print the most frequent label
+    unique_labels, counts = np.unique(train_target, return_counts=True)
+    most_frequent_label = unique_labels[np.argmax(counts)]
+    print(f"Most frequent label: {most_frequent_label}")
+
+    # Print the accuracy of a model that always predicts the most frequent label
+    baseline_accuracy = (valid_target == most_frequent_label).mean()
+    print(f"Baseline validation accuracy: {baseline_accuracy}")
+
+
+def create_hyperparameter_combinations(hyperparameters, verbose):
+    """
+    Create all combinations of hyperparameters using itertools
+    Adds a tqdm progress bar if verbose is True
+
+    Args:
+        hyperparameters (list): Values for each hyperparameter
+        verbose (bool): Whether to show a progress bar
+
+    Returns:
+        Iterable: All combinations of hyperparameters with a progress bar if verbose is True
+    """
+
+    # Create all combinations of hyperparameters
+    hyperparameter_combinations = list(
+        itertools.product(*hyperparameters.values())
+    )
+
+    if verbose:
+        hyperparameter_combinations = tqdm(
+            hyperparameter_combinations, desc="Hyperparameter search"
+        )
+
+    return hyperparameter_combinations
+
+
 class GridSearchModel:
     """
     A model that performs a grid search over a set of hyperparameters using a neural network
@@ -32,7 +103,7 @@ class GridSearchModel:
         Initialize the model, load data and create results dataframe
         """
 
-        self.embedding_type = embedding_type
+        self.model_type = embedding_type
 
         # Load data
         self.train_features = np.load(f"data/gold/train_{embedding_type}_features.npy")
@@ -41,31 +112,14 @@ class GridSearchModel:
         self.valid_target = np.load(f"data/gold/valid_{embedding_type}_target.npy")
 
         # Create results dataframe
-        self.results = pd.DataFrame(
-            columns=self.hyperparameters_keys
-            + [
-                "valid_accuracy",
-                "valid_loss",
-                "train_accuracy",
-                "train_loss",
-                "training_losses",
-                "valid_losses",
-                "model",
-            ]
-        )
+        self.results = create_results_df(self.hyperparameters_keys)
 
         # Print number of rows
         print(f"Number of rows in training data: {len(self.train_features)}")
         print(f"Number of rows in validation data: {len(self.valid_features)}")
 
-        # Print the most frequent label
-        unique_labels, counts = np.unique(self.train_target, return_counts=True)
-        most_frequent_label = unique_labels[np.argmax(counts)]
-        print(f"Most frequent label: {most_frequent_label}")
-
-        # Print the accuracy of a model that always predicts the most frequent label
-        baseline_accuracy = (self.valid_target == most_frequent_label).mean()
-        print(f"Baseline validation accuracy: {baseline_accuracy}")
+        # Print baseline metrics
+        print_baseline_metrics(self.train_target, self.valid_target)
 
         self.hyperparameters = hyperparameters
         self.current_dimensions_reduction = None
@@ -145,14 +199,9 @@ class GridSearchModel:
         """
 
         # Create all combinations of hyperparameters
-        hyperparameter_combinations = list(
-            itertools.product(*self.hyperparameters.values())
+        hyperparameter_combinations = create_hyperparameter_combinations(
+            self.hyperparameters, verbose
         )
-
-        if verbose:
-            hyperparameter_combinations = tqdm(
-                hyperparameter_combinations, desc="Hyperparameter search"
-            )
 
         # Iterate over all combinations
         for hyperparameter_combination in hyperparameter_combinations:
@@ -253,13 +302,13 @@ class GridSearchModel:
 
         # Save best model
         best_model = self.get_best_hyperparameters()["model"]
-        torch.save(best_model, f"out/{self.embedding_type}/best_model.pt")
+        torch.save(best_model, f"out/{self.model_type}/best_model.pt")
 
         # Save losses of best model
         training_losses = self.get_best_hyperparameters()["training_losses"]
         valid_losses = self.get_best_hyperparameters()["valid_losses"]
-        np.save(f"out/{self.embedding_type}/training_losses.npy", training_losses)
-        np.save(f"out/{self.embedding_type}/valid_losses.npy", valid_losses)
+        np.save(f"out/{self.model_type}/training_losses.npy", training_losses)
+        np.save(f"out/{self.model_type}/valid_losses.npy", valid_losses)
 
         # Remove models and losses from results
         self.results.drop("model", axis=1, inplace=True)
@@ -267,4 +316,4 @@ class GridSearchModel:
         self.results.drop("valid_losses", axis=1, inplace=True)
 
         # Save results
-        self.results.to_csv(f"out/{self.embedding_type}/grid_search_results.csv", index=False)
+        self.results.to_csv(f"out/{self.model_type}/grid_search_results.csv", index=False)

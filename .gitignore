@@ -7,3 +7,5 @@ __pycache__/
 .npy
 .safetensors
 data/gold/*
+
+out/unfrozen_bert/best_model.pt
