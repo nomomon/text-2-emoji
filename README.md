@@ -40,6 +40,8 @@ We will be consolidating all the commands into a single file in the future.
 To start the API, you can use the following command:
 
 ```bash
+# It can take a while to start the API, so please be patient.
+# It loads the model and the embeddings into memory.
 uvicorn api:app --reload
 ```
 

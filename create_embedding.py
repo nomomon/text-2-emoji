@@ -1,3 +1,4 @@
+import os
 import gensim.downloader as w2v_api
 import pandas as pd
 import numpy as np
@@ -8,7 +9,7 @@ import torch
 from text2emoji.data.embedding_generation import make_w2v_embeddings, make_mobert_embeddings
 
 
-def load_embedding_model(encoder_type):
+def load_embedding_model(encoder_type, device=None):
     """
     Load the model and tokenizer for the given encoder type.
 
@@ -33,8 +34,12 @@ def load_embedding_model(encoder_type):
         model = AutoModel.from_pretrained('google/mobilebert-uncased')
         v_size = 512
     elif encoder_type == 'unfrozen_bert':
+        if not os.path.exists('out/unfrozen_bert/best_model.pt'):
+            print("\n\nUnfrozen BERT model not found. Starting download...\n\n")
+            os.system("gdown --id 1Zi6GP6DC_iLk_MtIVuXugR57PUS2Oowj -O out/unfrozen_bert/best_model.pt")
+
         tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-        model = torch.load('out/unfrozen_bert/best_model.pt')
+        model = torch.load('out/unfrozen_bert/best_model.pt', map_location=device)
         v_size = 768
     else:
         raise ValueError("Invalid encoder type")

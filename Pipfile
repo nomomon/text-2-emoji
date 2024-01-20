@@ -23,6 +23,7 @@ scikit-learn = "*"
 pre-commit = "*"
 fastapi = "*"
 uvicorn = "*"
+gdown = "*"
 
 [dev-packages]
 
