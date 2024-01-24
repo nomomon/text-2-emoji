@@ -17,8 +17,16 @@ def handle_streamlit():
 
     usr_sentence = st.text_input("Please enter a sentence:")
 
+    model_name_pairs = {
+        "Word-2-Vec": "word2vec",
+        "Mobile Bert": "mobert",
+        "Unfrozen Bert": "unfrozen_bert"
+    }
+    usr_model_name = st.selectbox("Please select a model:", list(model_name_pairs.keys()))
+    usr_model = model_name_pairs[usr_model_name]
+
     api_url = "http://127.0.0.1:8000/get_emoji"
-    usr_params = {'text': usr_sentence}
+    usr_params = {"text": usr_sentence, "embedding_type" : usr_model}
     try:
         data = requests.get(api_url, params=usr_params).json()
     except requests.exceptions.RequestException as e:
