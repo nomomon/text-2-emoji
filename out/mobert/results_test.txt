@@ -1,0 +1,4 @@
+           accuracy  top_3_accuracy  top_5_accuracy  macro f1_score  macro precision  macro recall
+most_freq    0.2116          0.2828          0.3364        0.017465         0.010580      0.050000
+random       0.0862          0.1574          0.2108        0.045308         0.045385      0.045265
+model        0.2116          0.2828          0.3364        0.017465         0.010580      0.050000

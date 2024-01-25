@@ -1,7 +1,9 @@
-import torch
+import requests
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+from tqdm import tqdm
 
 from sklearn.metrics import (
     top_k_accuracy_score,
@@ -11,41 +13,33 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 
-from text2emoji.features.embedding_processing import reduce_dimensions
 from text2emoji.models.bootstrap import bootstrap
-from text2emoji.models.nn_classifier import get_probabilities
 
 
 def eval_best_model(type, eval_set="valid"):
-    # Load evaluation embeddings
-    eval_features = np.load(f"data/gold/{eval_set}_{type}_features.npy")
-    eval_labels = np.load(f"data/gold/{eval_set}_{type}_target.npy")
-
-    # Load the number of dimensions and technique used for dimensionality reduction
-    df = pd.read_csv(f"out/{type}/grid_search_results.csv")
-
-    # dimensionality_reduction ,n_dimensions, get these fields from the df
-    reduction_technique = df["dimensionality_reduction"].iloc[0]
-    n_dimensions = df["n_dimensions"].iloc[0]
-
-    # Reduce dimensions
-    eval_embeddings = reduce_dimensions( 
-        eval_features, n_dimensions, reduction_technique
-    )
-
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    # Load data
+    prefix = "unfrozen_transformer_" if type == "unfrozen_bert" else ""
+    df = pd.read_csv(f"data/silver/{prefix}{eval_set}.csv")
     
-    # Load best model
-    
-    best_model = torch.load("out/best_model.pt", map_location=torch.device('cpu'))
-    best_model.to(device)
+    eval_labels = df["label"].values
+    eval_text = df["text"].values
 
-    # Get predictions of the model
-    probabilties = get_probabilities(
-        best_model, torch.tensor(eval_embeddings).to(device)
-    )
-    
+    probabilities = []
+    for text in tqdm(eval_text):
+        api_url = "http://127.0.0.1:8000/get_emoji"
+        url_text = text.replace(" ", "%20")
+        usr_params = {"text": url_text, "embedding_type": type}
+        try:
+            data = requests.get(api_url, params=usr_params).json()
+        except Exception as e:
+            print(e)
+            return None
+
+        df_data = pd.json_normalize(data["results"])
+        df_data = df_data.sort_values(by="label", ascending=True)
+        probabilities.append(df_data["probability"].values)
+    probabilties = np.array(probabilities)
+
     # Get baseline accuracy (most frequent label)
     most_freq_labels = np.full(len(eval_labels), np.argmax(np.bincount(eval_labels)))
     most_freq_one_hot = np.zeros((len(eval_labels), len(np.unique(eval_labels))))
@@ -56,7 +50,10 @@ def eval_best_model(type, eval_set="valid"):
     random_one_hot = np.zeros((len(eval_labels), len(np.unique(eval_labels))))
     random_one_hot[np.arange(len(eval_labels)), random_labels] = 1
 
-    results = pd.DataFrame(columns=["accuracy", "top_3_accuracy", "top_5_accuracy", "macro f1_score", "macro precision", "macro recall"])
+    results = pd.DataFrame(columns=[
+        "accuracy", "top_3_accuracy", "top_5_accuracy", 
+        "macro f1_score", "macro precision", "macro recall"
+    ])
     results.loc["most_freq"] = [
         np.mean(most_freq_labels == eval_labels),
         top_k_accuracy_score(eval_labels, most_freq_one_hot, k=3),
@@ -82,17 +79,17 @@ def eval_best_model(type, eval_set="valid"):
         recall_score(eval_labels, probabilties.argmax(axis=1), average="macro"),
     ]
 
-    print("Evaluated on", eval_set, "set")
-    print(results.to_latex(float_format="%.3f"))
+    with open(f"out/{type}/results_{eval_set}.txt", "w") as f:
+        f.write(results.to_string())
 
     conf_matrix = confusion_matrix(eval_labels, probabilties.argmax(axis=1), normalize="true")
     plt.figure(figsize=(10, 10))
     plt.imshow(conf_matrix, cmap="Blues")
     plt.xlabel("Predicted")
     plt.ylabel("True")
-    plt.title(f"Normalized confusion matrix for {eval_set} set")
+    plt.title(f"Normalized confusion matrix for {eval_set} set ({type})")
     labels = ["❤", "😍", "😂", "💕", "🔥", "😊", "😎", "✨", "💙", "😘", "📷", "🇺🇸", "☀", "💜", "😉", "💯", "😁", "🎄", "📸", "😜"]
-    plt.xticks(range(len(labels)), labels, rotation=90)
+    plt.xticks(range(len(labels)), labels)
     plt.yticks(range(len(labels)), labels)
     plt.colorbar()
     for i in range(conf_matrix.shape[0]):
@@ -105,14 +102,13 @@ def eval_best_model(type, eval_set="valid"):
                 c = "white" if conf_matrix[i, j] > 0.5 else "black"
             )
     plt.tight_layout()
-    plt.savefig(f"out/confusion_matrix_{eval_set}.eps")
-    plt.savefig(f"out/confusion_matrix_{eval_set}.png")
+    plt.savefig(f"out/{type}/confusion_matrix_{eval_set}.png")
 
     signif = 0.05
     p_val_most_freq = bootstrap(probabilties.argmax(axis=1), most_freq_labels, eval_labels)
     p_val_random = bootstrap(probabilties.argmax(axis=1), random_labels, eval_labels)
 
-    print(
+    results = \
 f"""
 Bootstrap test for model vs most frequent
     - H0: model acc == most frequent acc
@@ -133,5 +129,6 @@ Bootstrap test for model vs random
     p-value < significance level: {p_val_random < signif}
     {"reject H0" if p_val_random < signif else "do not reject H0"}
 """
-    )
 
+    with open(f"out/{type}/bootstrap_{eval_set}.txt", "w") as f:
+        f.write(results)

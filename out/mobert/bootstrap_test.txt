@@ -1,0 +1,19 @@
+
+Bootstrap test for model vs most frequent
+    - H0: model acc == most frequent acc
+    - H1: model acc >= most frequent acc + 2 * observed_delta
+
+    p-value: 1.00000
+    significance level: 0.05
+    p-value < significance level: False
+    do not reject H0
+
+
+Bootstrap test for model vs random
+    - H0: model acc == random acc
+    - H1: model acc >= random acc + 2 * observed_delta
+
+    p-value: 0.00000
+    significance level: 0.05
+    p-value < significance level: True
+    reject H0
